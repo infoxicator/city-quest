@@ -142,7 +142,7 @@ export function ScoreBoardWidget() {
 					</section>
 
 					<section className="rounded-2xl border border-amber-800/20 bg-amber-950/30 p-5">
-						<div className="flex items-center justify-between text-sm text-amber-100">
+						<div className="flex items-center justify-between text-sm font-medium text-amber-100">
 							<span>Badges + Perks</span>
 							<time>{timestamp}</time>
 						</div>

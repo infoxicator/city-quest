@@ -110,7 +110,7 @@ export function VideoSummaryWidget() {
 		<div className="min-h-[calc(100vh-5rem)] bg-gradient-to-b from-purple-950 via-amber-950 to-stone-950 py-12 text-white">
 			<div className="mx-auto flex w-full max-w-4xl justify-center px-6">
 				<section className="w-full max-w-2xl space-y-6 rounded-3xl border border-amber-800/20 bg-amber-950/20 p-8 shadow-2xl backdrop-blur">
-					<div className="relative overflow-hidden rounded-2xl border border-amber-700/30 bg-amber-950/30 pb-[56.25%]">
+					<div className="relative overflow-hidden rounded-2xl border-2 border-amber-600/40 bg-amber-950/30 pb-[56.25%] shadow-2xl">
 						{mediaType === "iframe" && data.embedUrl && (
 							<iframe
 								src={data.embedUrl}
@@ -186,7 +186,7 @@ export function VideoSummaryWidget() {
 								href={ctaUrl}
 								target="_blank"
 								rel="noreferrer noopener"
-								className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-600 px-6 py-4 text-lg font-bold text-amber-950 shadow-lg shadow-amber-900/50 transition hover:from-amber-400 hover:to-yellow-500 no-underline"
+								className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-600 px-6 py-4 text-lg font-bold text-amber-950 shadow-lg shadow-amber-900/50 transition hover:from-amber-400 hover:to-yellow-500 no-underline"
 							>
 								{data.callToAction || "Open briefing"}
 							</a>
