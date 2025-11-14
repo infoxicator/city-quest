@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { handleMcpRequest } from "@/utils/mcp-handler";
 import { resolveAppBaseUrl } from "@/utils/base-url";
+import { registerWidgets } from '@/utils/widgets.tsx'
 
 
 const getAppsSdkCompatibleHtml = async (baseUrl: string, path: string) => {
@@ -31,77 +32,54 @@ const resourceOrigin = (() => {
   }
 })();
 
-// Register the HTML template as a resource
-server.registerResource(
-  "show-guitar-html",
-  "ui://widget/show-guitar.html",
-  {},
-  async () => ({
-    contents: [
-      {
-        uri: "ui://widget/show-guitar.html",
-        mimeType: "text/html+skybridge",
-        text: await getAppsSdkCompatibleHtml(appBaseUrl, "greeting"),
-        _meta: {
-          "openai/widgetPrefersBorder": true,
-          "openai/widgetDomain": "https://chatgpt.com",
-          "openai/widgetDescription": "Displays a guitar product with styling",
-          "openai/widgetCSP": {
-            connect_domains: [resourceOrigin],
-            resource_domains: [resourceOrigin],
-          },
-        },
-      },
-    ],
-  })
-);
 
-server.registerTool(
-  "getGuitars",
-  {
-    title: "Get all guitars",
-    description: "Get all guitar products from the database",
-    inputSchema: {},
-  },
-  async () => {
-    return {
-      content: [{ type: "text", text: "hello world" }],
-    };
-  }
-);
+registerWidgets(server);
+// server.registerTool(
+//   "getGuitars",
+//   {
+//     title: "Get all guitars",
+//     description: "Get all guitar products from the database",
+//     inputSchema: {},
+//   },
+//   async () => {
+//     return {
+//       content: [{ type: "text", text: "hello world" }],
+//     };
+//   }
+// );
 
-// Register the tool that references this template
-server.registerTool(
-  "showGuitar",
-  {
-    title: "Show a guitar",
-    description: "Show a guitar product from the database",
-    inputSchema: {
-      id: z.string().describe("The id of the guitar to show"),
-    },
-    _meta: {
-      "openai/outputTemplate": "ui://widget/show-guitar.html",
-      "openai/toolInvocation/invoking": "Showing a guitar...",
-      "openai/toolInvocation/invoked": "Showed a guitar!",
-    },
-  },
-  async ({ id }) => {
-    return {
-      _meta: {
-        "openai/outputTemplate": "ui://widget/show-guitar.html",
-        "openai/toolInvocation/invoking": "Showing a guitar...",
-        "openai/toolInvocation/invoked": "Showed a guitar!",
-      },
-      content: [
-        {
-          type: "text",
-          text: "hello world",
-        },
-      ],
-      structuredContent: {},
-    };
-  }
-);
+// // Register the tool that references this template
+// server.registerTool(
+//   "showGuitar",
+//   {
+//     title: "Show a guitar",
+//     description: "Show a guitar product from the database",
+//     inputSchema: {
+//       id: z.string().describe("The id of the guitar to show"),
+//     },
+//     _meta: {
+//       "openai/outputTemplate": "ui://widget/show-guitar.html",
+//       "openai/toolInvocation/invoking": "Showing a guitar...",
+//       "openai/toolInvocation/invoked": "Showed a guitar!",
+//     },
+//   },
+//   async ({ id }) => {
+//     return {
+//       _meta: {
+//         "openai/outputTemplate": "ui://widget/show-guitar.html",
+//         "openai/toolInvocation/invoking": "Showing a guitar...",
+//         "openai/toolInvocation/invoked": "Showed a guitar!",
+//       },
+//       content: [
+//         {
+//           type: "text",
+//           text: "hello world",
+//         },
+//       ],
+//       structuredContent: {},
+//     };
+//   }
+// );
 
 export const Route = createFileRoute("/mcp")({
   server: {
