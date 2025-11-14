@@ -12,12 +12,12 @@ const corsHeaders = {
 }
 
 const config = defineConfig({
-  // server: {
-  //   headers: corsHeaders,
-  // },
-  // preview: {
-  //   headers: corsHeaders,
-  // },
+  server: {
+    headers: corsHeaders,
+  },
+  preview: {
+    headers: corsHeaders,
+  },
   plugins: [
     // this is the plugin that enables path aliases
     viteTsConfigPaths({

@@ -544,7 +544,7 @@ body {
 
 const createAdventureWidgetHtml = (baseUrl: string) => `<link rel="stylesheet" href="${baseUrl}/widgets/greeting.css">
 <div id="tanstack-app-root"></div>
-<script src="${baseUrl}/widgets/greeting.js"></script>
+<script type="module" src="${baseUrl}widgets/greeting.js"></script>
 `;
 
 function clampToPercentage(value?: number | null) {
@@ -928,10 +928,10 @@ export async function registerWidgets(server: McpServer) {
 					...resourceInfo,
 					metadata: {
 						"openai/widgetDescription": widget.description,
-						"openai/widgetCSP": {
-							connect_domains: [],
-							resource_domains: [baseUrl],
-						},
+						// "openai/widgetCSP": {
+						// 	connect_domains: [],
+						// 	resource_domains: [baseUrl],
+						// },
 						...(widget.widgetPrefersBorder
 							? { "openai/widgetPrefersBorder": true }
 							: {}),
