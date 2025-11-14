@@ -542,89 +542,9 @@ body {
 </html>
 `;
 
-const createAdventureWidgetHtml = (baseUrl: string) => `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<title>Start CityQuest</title>
-<style>
-:root {
-  color-scheme: dark;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-}
-* {
-  box-sizing: border-box;
-}
-body {
-  margin: 0;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(circle at 20% 20%, #0f172a, #020617 70%);
-  color: #e2e8f0;
-  font-family: inherit;
-}
-.widget {
-  width: min(640px, calc(100% - 32px));
-  padding: 32px;
-  border-radius: 28px;
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(94, 234, 212, 0.35);
-  box-shadow: 0 30px 80px rgba(2, 6, 23, 0.7);
-}
-.widget h1 {
-  margin: 0 0 12px;
-  font-size: 34px;
-}
-.widget p {
-  margin: 0 0 8px;
-  color: #cbd5f5;
-}
-ol {
-  margin: 18px 0 28px 20px;
-  padding: 0;
-  color: #bae6fd;
-}
-li {
-  margin-bottom: 10px;
-}
-a.cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 20px;
-  border-radius: 999px;
-  border: 1px solid rgba(248, 250, 252, 0.4);
-  color: #041625;
-  background: linear-gradient(120deg, #5eead4, #38bdf8);
-  font-weight: 600;
-  text-decoration: none;
-}
-@media (max-width: 520px) {
-  .widget {
-    padding: 24px;
-  }
-  .widget h1 {
-    font-size: 26px;
-  }
-}
-</style>
-</head>
-<body>
-<section class="widget">
-  <p class="eyebrow">CityQuest Dispatch</p>
-  <h1>Start a New Adventure</h1>
-  <p>Spin up the CityQuest console to register a player, upload an avatar, and brief the guild on the mission at hand.</p>
-  <ol>
-    <li>Open the adventure console.</li>
-    <li>Choose a path, set the hero name, and drop in an avatar.</li>
-    <li>Press <strong>Launch Quest</strong> to generate a personalized story.</li>
-  </ol>
-  <a class="cta" href="${baseUrl}greeting" target="_blank" rel="noreferrer noopener">Open Adventure Console</a>
-</section>
-</body>
-</html>
+const createAdventureWidgetHtml = (baseUrl: string) => `<link rel="stylesheet" href="${baseUrl}/widgets/greeting.css">
+<div id="tanstack-app-root"></div>
+<script src="${baseUrl}/widgets/greeting.js"></script>
 `;
 
 function clampToPercentage(value?: number | null) {
@@ -707,7 +627,7 @@ export async function registerWidgets(server: McpServer) {
 	// 	new URL(resourcePath, baseUrl).toString()
 	const widgets = [
 		createWidget({
-			name: "start-cityquest",
+			name: "play-cityquest",
 			title: "Start CityQuest Adventure",
 			description:
 				"Launch the CityQuest onboarding console to register a hero and begin a new mission.",
