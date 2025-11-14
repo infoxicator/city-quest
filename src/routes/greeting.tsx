@@ -69,7 +69,7 @@ const generateHeroName = () => {
 }
 
 export const Route = createFileRoute('/greeting')({
-  ssr: false,
+  ssr: true,
   component: GreetingRoute,
 })
 
