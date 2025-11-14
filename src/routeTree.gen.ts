@@ -9,10 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VideoRouteImport } from './routes/video'
+import { Route as ScoreRouteImport } from './routes/score'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as GreetingRouteImport } from './routes/greeting'
 import { Route as IndexRouteImport } from './routes/index'
 
+const VideoRoute = VideoRouteImport.update({
+  id: '/video',
+  path: '/video',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScoreRoute = ScoreRouteImport.update({
+  id: '/score',
+  path: '/score',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
@@ -33,34 +45,56 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/greeting': typeof GreetingRoute
   '/mcp': typeof McpRoute
+  '/score': typeof ScoreRoute
+  '/video': typeof VideoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/greeting': typeof GreetingRoute
   '/mcp': typeof McpRoute
+  '/score': typeof ScoreRoute
+  '/video': typeof VideoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/greeting': typeof GreetingRoute
   '/mcp': typeof McpRoute
+  '/score': typeof ScoreRoute
+  '/video': typeof VideoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/greeting' | '/mcp'
+  fullPaths: '/' | '/greeting' | '/mcp' | '/score' | '/video'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/greeting' | '/mcp'
-  id: '__root__' | '/' | '/greeting' | '/mcp'
+  to: '/' | '/greeting' | '/mcp' | '/score' | '/video'
+  id: '__root__' | '/' | '/greeting' | '/mcp' | '/score' | '/video'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GreetingRoute: typeof GreetingRoute
   McpRoute: typeof McpRoute
+  ScoreRoute: typeof ScoreRoute
+  VideoRoute: typeof VideoRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/video': {
+      id: '/video'
+      path: '/video'
+      fullPath: '/video'
+      preLoaderRoute: typeof VideoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/score': {
+      id: '/score'
+      path: '/score'
+      fullPath: '/score'
+      preLoaderRoute: typeof ScoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mcp': {
       id: '/mcp'
       path: '/mcp'
@@ -89,6 +123,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GreetingRoute: GreetingRoute,
   McpRoute: McpRoute,
+  ScoreRoute: ScoreRoute,
+  VideoRoute: VideoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

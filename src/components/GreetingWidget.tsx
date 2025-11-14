@@ -1,8 +1,9 @@
 import { useMutation } from "convex/react";
-import { Camera, Sparkles } from "lucide-react";
+import { Camera, Sparkles, Wand2, Shield, Sword } from "lucide-react";
 import {
 	type DragEvent,
 	useCallback,
+	useEffect,
 	useId,
 	useMemo,
 	useRef,
@@ -73,18 +74,118 @@ const generateHeroName = () => {
 	return `${title} ${suffix}`;
 };
 
+// Cache for the game card image blob
+let gameCardFileCache: Promise<File> | null = null;
+
+const getGameCardImage = async (): Promise<File> => {
+	if (!gameCardFileCache) {
+		gameCardFileCache = (async () => {
+			const response = await fetch(
+				"https://city-quest.netlify.app/cityquest-gamecard.png",
+			);
+			if (!response.ok) {
+				throw new Error("Failed to fetch game card image");
+			}
+			const blob = await response.blob();
+			return new File([blob], "cityquest-gamecard.png", { type: blob.type });
+		})();
+	}
+	return gameCardFileCache;
+};
+
+
+function GameLoadingCard() {
+	const [progress, setProgress] = useState(0);
+
+	useEffect(() => {
+		const interval = setInterval(() => {
+			setProgress((prev) => {
+				if (prev >= 95) {
+					return prev;
+				}
+				const newProgress = prev + Math.random() * 10;
+				return newProgress;
+			});
+		}, 300);
+
+		return () => clearInterval(interval);
+	}, []);
+
+	return (
+		<div className="relative flex min-h-[220px] w-full flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-amber-600/40 bg-gradient-to-br from-amber-950/60 via-stone-900/80 to-amber-950/60 p-8 shadow-2xl">
+			{/* Animated background elements */}
+			<div className="pointer-events-none absolute inset-0 overflow-hidden">
+				<div className="absolute -top-20 -left-20 h-40 w-40 rounded-full bg-amber-500/20 blur-3xl animate-pulse" />
+				<div className="absolute -bottom-20 -right-20 h-40 w-40 rounded-full bg-yellow-500/20 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+				<div className="absolute top-1/2 left-1/2 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/10 blur-2xl animate-pulse" style={{ animationDelay: "0.5s" }} />
+			</div>
+
+			{/* Floating game icons */}
+			<div className="relative z-10 flex items-center justify-center gap-6 mb-6">
+				<Shield className="h-8 w-8 text-amber-400 animate-bounce" style={{ animationDelay: "0s", animationDuration: "2s" }} />
+				<Wand2 className="h-10 w-10 text-yellow-400 animate-spin" style={{ animationDuration: "3s" }} />
+				<Sword className="h-8 w-8 text-amber-400 animate-bounce" style={{ animationDelay: "1s", animationDuration: "2s" }} />
+			</div>
+
+			{/* Loading text */}
+			<div className="relative z-10 text-center space-y-2 mb-6">
+				<h3 className="text-xl font-bold text-amber-200 drop-shadow-lg">
+					Forging Your Character Card
+				</h3>
+				<p className="text-sm text-amber-300/80">
+					The guild artisans are crafting your legend...
+				</p>
+			</div>
+
+			{/* Progress bar */}
+			<div className="relative z-10 w-full max-w-xs">
+				<div className="h-2 w-full overflow-hidden rounded-full bg-amber-900/50 border border-amber-700/30">
+					<div
+						className="h-full bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 transition-all duration-300 ease-out shadow-lg shadow-amber-500/50"
+						style={{ width: `${Math.min(progress, 95)}%` }}
+					/>
+				</div>
+				<div className="mt-2 text-center">
+					<span className="text-xs font-semibold text-amber-300">
+						{Math.round(Math.min(progress, 95))}%
+					</span>
+				</div>
+			</div>
+
+			{/* Sparkle effects */}
+			<div className="pointer-events-none absolute inset-0">
+				{Array.from({ length: 6 }).map((_, i) => (
+					<div
+						key={i}
+						className="absolute h-1 w-1 rounded-full bg-amber-400 animate-ping"
+						style={{
+							left: `${20 + i * 15}%`,
+							top: `${30 + (i % 3) * 20}%`,
+							animationDelay: `${i * 0.3}s`,
+							animationDuration: "2s",
+						}}
+					/>
+				))}
+			</div>
+		</div>
+	);
+}
+
 export function GreetingWidget() {
 	const [playerName, setPlayerName] = useState(() => generateHeroName());
 	const [hasEditedName, setHasEditedName] = useState(false);
 	const [selectedAdventure, setSelectedAdventure] =
 		useState<AdventureType>("tour");
 	const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+	const [avatarFile, setAvatarFile] = useState<File | null>(null);
 	const [isDragging, setIsDragging] = useState(false);
 	const [story, setStory] = useState<string | null>(null);
 	const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">(
 		"idle",
 	);
 	const [errorMessage, setErrorMessage] = useState("");
+	const [combinedImage, setCombinedImage] = useState<string | null>(null);
+	const [isCombiningImages, setIsCombiningImages] = useState(false);
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const playerNameInputId = useId();
@@ -116,6 +217,67 @@ export function GreetingWidget() {
 		setErrorMessage("");
 	}, []);
 
+	const combineImages = useCallback(
+		async (avatarFile: File) => {
+			setIsCombiningImages(true);
+			setErrorMessage("");
+			try {
+				const gameCardFile = await getGameCardImage();
+				const formData = new FormData();
+				formData.append("image1", avatarFile);
+				formData.append("image2", gameCardFile);
+				formData.append(
+					"prompt",
+					`Take the person from the first uploaded image and place them into the headshot area of the character card in the second image. Make sure the portrait fits naturally within the empty frame or designated area of the card design.
+
+Preserve the fantasy/Dungeons & Dragons–style aesthetic of the card.
+
+At the bottom of the card, add the text:
+
+Player: ${displayName}
+
+Match the card's existing typography and color style.`,
+				);
+
+				const response = await fetch(
+					"https://imageplustexttoimage.mcp-ui-flows-nanobanana.workers.dev/api/combine-images",
+					{
+						method: "POST",
+						body: formData,
+					},
+				);
+
+				if (!response.ok) {
+					throw new Error("Failed to combine images");
+				}
+
+				const result = await response.json();
+				if (result.success && result.imageData) {
+					const imageDataUrl = `data:${result.mimeType ?? "image/png"};base64,${result.imageData}`;
+					setCombinedImage(imageDataUrl);
+				} else {
+					throw new Error("Image combination failed");
+				}
+			} catch (error) {
+				console.error("Error combining images:", error);
+				setErrorMessage(
+					error instanceof Error
+						? error.message
+						: "Failed to create character card. Please try again.",
+				);
+			} finally {
+				setIsCombiningImages(false);
+			}
+		},
+		[displayName],
+	);
+
+	useEffect(() => {
+		if (avatarFile && hasEditedName) {
+			void combineImages(avatarFile);
+		}
+	}, [displayName, avatarFile, hasEditedName, combineImages]);
+
 	const handleFileSelection = useCallback(
 		async (file?: File | null) => {
 			if (!file) {
@@ -130,16 +292,18 @@ export function GreetingWidget() {
 				return;
 			}
 			setErrorMessage("");
+			setAvatarFile(file);
 			const reader = new FileReader();
 			reader.onload = () => {
 				if (typeof reader.result === "string") {
 					setAvatarPreview(reader.result);
 					resetStory();
+					void combineImages(file);
 				}
 			};
 			reader.readAsDataURL(file);
 		},
-		[resetStory],
+		[resetStory, combineImages],
 	);
 
 	const handleDrop = useCallback(
@@ -232,52 +396,66 @@ export function GreetingWidget() {
 
 					<div className="space-y-3">
 						<div className="mx-auto max-w-md">
-							<button
-								type="button"
-								onDragOver={(event) => {
-									event.preventDefault();
-									setIsDragging(true);
-								}}
-								onDragLeave={() => setIsDragging(false)}
-								onDrop={handleDrop}
-								onClick={() => fileInputRef.current?.click()}
-								className={cn(
-									"flex min-h-[180px] w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-amber-700/40 bg-amber-950/30 p-6 text-center transition",
-									isDragging && "border-amber-400/80 bg-amber-300/20",
-								)}
-							>
-								{avatarPreview ? (
+							{combinedImage ? (
+								<div className="relative overflow-hidden rounded-2xl border-2 border-amber-600/40 bg-amber-950/30 p-2 shadow-2xl">
 									<img
-										src={avatarPreview}
-										alt="Hero profile preview"
-										className="mx-auto w-full max-w-full rounded-2xl object-cover shadow-lg"
-										style={{ maxHeight: "220px" }}
+										src={combinedImage}
+										alt="Character card"
+										className="mx-auto w-full max-w-full rounded-xl object-contain shadow-lg"
 									/>
-								) : (
-									<>
-										<div className="rounded-full bg-amber-800/30 p-3 text-amber-100">
-											<Camera className="h-6 w-6" />
-										</div>
-										<p className="text-sm text-amber-100">
-											Drag & drop or tap to upload
-										</p>
-										<p className="text-xs text-amber-200/80">
-											Supports live camera capture on mobile
-										</p>
-									</>
-								)}
-								<input
-									ref={fileInputRef}
-									type="file"
-									accept="image/*"
-									capture="environment"
-									className="hidden"
-									onChange={(event) => {
-										void handleFileSelection(event.target.files?.[0]);
-										event.target.value = "";
+									<button
+										type="button"
+										onClick={() => {
+											setCombinedImage(null);
+											setAvatarPreview(null);
+											setAvatarFile(null);
+											resetStory();
+										}}
+										className="absolute top-3 right-3 rounded-full bg-amber-900/80 p-2 text-amber-200 hover:bg-amber-800/90 transition"
+										title="Upload a different image"
+									>
+										<Camera className="h-4 w-4" />
+									</button>
+								</div>
+							) : isCombiningImages ? (
+								<GameLoadingCard />
+							) : (
+								<button
+									type="button"
+									onDragOver={(event) => {
+										event.preventDefault();
+										setIsDragging(true);
 									}}
-								/>
-							</button>
+									onDragLeave={() => setIsDragging(false)}
+									onDrop={handleDrop}
+									onClick={() => fileInputRef.current?.click()}
+									className={cn(
+										"flex min-h-[180px] w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-amber-700/40 bg-amber-950/30 p-6 text-center transition",
+										isDragging && "border-amber-400/80 bg-amber-300/20",
+									)}
+								>
+									<div className="rounded-full bg-amber-800/30 p-3 text-amber-100">
+										<Camera className="h-6 w-6" />
+									</div>
+									<p className="text-sm text-amber-100">
+										Drag & drop or tap to upload
+									</p>
+									<p className="text-xs text-amber-200/80">
+										Supports live camera capture on mobile
+									</p>
+									<input
+										ref={fileInputRef}
+										type="file"
+										accept="image/*"
+										capture="environment"
+										className="hidden"
+										onChange={(event) => {
+											void handleFileSelection(event.target.files?.[0]);
+											event.target.value = "";
+										}}
+									/>
+								</button>
+							)}
 						</div>
 					</div>
 
