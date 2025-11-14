@@ -74,6 +74,26 @@ const generateHeroName = () => {
 	return `${title} ${suffix}`;
 };
 
+// Cache for the game card image blob
+let gameCardFileCache: Promise<File> | null = null;
+
+const getGameCardImage = async (): Promise<File> => {
+	if (!gameCardFileCache) {
+		gameCardFileCache = (async () => {
+			const response = await fetch(
+				"https://city-quest.netlify.app/cityquest-gamecard.png",
+			);
+			if (!response.ok) {
+				throw new Error("Failed to fetch game card image");
+			}
+			const blob = await response.blob();
+			return new File([blob], "cityquest-gamecard.png", { type: blob.type });
+		})();
+	}
+	return gameCardFileCache;
+};
+
+
 function GameLoadingCard() {
 	const [progress, setProgress] = useState(0);
 
@@ -197,21 +217,12 @@ export function GreetingWidget() {
 		setErrorMessage("");
 	}, []);
 
-	const fetchGameCardImage = useCallback(async (): Promise<File> => {
-		const response = await fetch("/cityquest-gamecard.png");
-		if (!response.ok) {
-			throw new Error("Failed to fetch game card image");
-		}
-		const blob = await response.blob();
-		return new File([blob], "cityquest-gamecard.png", { type: blob.type });
-	}, []);
-
 	const combineImages = useCallback(
 		async (avatarFile: File) => {
 			setIsCombiningImages(true);
 			setErrorMessage("");
 			try {
-				const gameCardFile = await fetchGameCardImage();
+				const gameCardFile = await getGameCardImage();
 				const formData = new FormData();
 				formData.append("image1", avatarFile);
 				formData.append("image2", gameCardFile);
@@ -258,7 +269,7 @@ Match the card's existing typography and color style.`,
 				setIsCombiningImages(false);
 			}
 		},
-		[displayName, fetchGameCardImage],
+		[displayName],
 	);
 
 	useEffect(() => {
