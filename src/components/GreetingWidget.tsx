@@ -260,9 +260,8 @@ Match the card's existing typography and color style.`,
 				}
 
 				const result = await response.json();
-				if (result.success && result.imageData) {
-					const imageDataUrl = `data:${result.mimeType ?? "image/png"};base64,${result.imageData}`;
-					setCombinedImage(imageDataUrl);
+				if (result.success && result.imageUrl) {
+					setCombinedImage(result.imageUrl);
 				} else {
 					throw new Error("Image combination failed");
 				}
@@ -333,16 +332,17 @@ Match the card's existing typography and color style.`,
 		setStory(null);
 		try {
 			console.log({displayName, selectedAdventure});
-			// const gameId = await createGame({
-			// 	playerName: displayName,
-			// 	adventureType: selectedAdventure,
-			// 	avatarDataUrl: avatarPreview ?? undefined,
-			// });
+			const gameId = await createGame({
+				playerName: displayName,
+				adventureType: selectedAdventure,
+				location: "London",
+				characterCardUrl: combinedImage ?? undefined,
+			});
 
 			// const response = await sendPrompt({ gameId });
 			//setStory(response?.prompt ?? null);
 			const prompt = getStartAdventurePrompt({ name: displayName, adventureType: selectedAdventure as 'tour' | 'foodie' | 'race', location: "London" });
-			console.log({prompt});
+			console.log({prompt, gameId});
 			void sendMcpMessage('prompt', { prompt })
 			setStatus("success");
 		} catch (error) {
@@ -355,7 +355,7 @@ Match the card's existing typography and color style.`,
 			setStatus("error");
 		}
 	}, [
-		avatarPreview,
+		combinedImage,
 		createGame,
 		displayName,
 		selectedAdventure,

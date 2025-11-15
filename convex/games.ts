@@ -24,12 +24,16 @@ export const createGame = mutation({
       v.literal('race'),
     ),
     avatarDataUrl: v.optional(v.string()),
+    location: v.string(),
+    characterCardUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const gameId = await ctx.db.insert('games', {
       playerName: args.playerName,
       adventureType: args.adventureType,
       avatarDataUrl: args.avatarDataUrl,
+      location: args.location,
+      characterCardUrl: args.characterCardUrl,
       createdAt: Date.now(),
     })
 
