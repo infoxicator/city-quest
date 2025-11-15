@@ -52,6 +52,8 @@ export function VideoSummaryWidget() {
 			setShareId(null);
 
 			try {
+				// Temporarily skip hitting the API; use the bundled payload for local previews.
+				/*
 				const response = await fetch(STORY_API_URL, {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -64,6 +66,15 @@ export function VideoSummaryWidget() {
 				}
 
 				const payload: ShareResponse = await response.json();
+				*/
+
+				if (import.meta.env.DEV) {
+					console.info(
+						`Skipping ${STORY_API_URL} and returning bundled story payload.`,
+					);
+				}
+
+				const payload: ShareResponse = { id: "local-story" };
 				const id = payload?.id;
 
 				if (!id) {
@@ -98,14 +109,21 @@ export function VideoSummaryWidget() {
 			setLoaderData(null);
 
 			try {
-				const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+				const origin =
+					typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+
+				// Comment out the network fetch so we can develop with the baked-in payload.
+				/*
 				const res = await fetch(
 					`https://imageplustexttoimage.mcp-ui-flows-nanobanana.workers.dev/api/payloads/${id}`,
-					{ signal }
+					{ signal },
 				);
 
 				if (!res.ok) {
-					const message = res.status === 404 ? "We couldn't find that adventure." : "Unable to load shared story.";
+					const message =
+						res.status === 404
+							? "We couldn't find that adventure."
+							: "Unable to load shared story.";
 					if (!signal?.aborted) {
 						setLoaderData({
 							status: "error",
@@ -121,7 +139,10 @@ export function VideoSummaryWidget() {
 					if (!signal?.aborted) {
 						setLoaderData({
 							status: "error",
-							message: typeof json.message === "string" ? json.message : "Unable to load shared story.",
+							message:
+								typeof json.message === "string"
+									? json.message
+									: "Unable to load shared story.",
 							shareUrl: `${origin}/share/${id}`,
 						});
 					}
@@ -130,6 +151,8 @@ export function VideoSummaryWidget() {
 
 				const payload = json?.payload;
 				const storyPayload = payload?.storyData ?? payload;
+				*/
+				const storyPayload = STORY_PAYLOAD.storyData;
 				const parsed = StoryResponse.safeParse(storyPayload);
 
 				if (!parsed.success) {
