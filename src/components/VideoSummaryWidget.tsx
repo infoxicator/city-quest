@@ -240,7 +240,8 @@ export function VideoSummaryWidget() {
 			<div className="relative mx-auto w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-black/40 shadow-2xl backdrop-blur">
 				{loaderData ? (
 					<div className="w-full">
-						<SharedAdventure loaderData={loaderData} />
+						{/* <SharedAdventure loaderData={loaderData} /> */}
+						<iframe src="https://city-quest-video-gen.vercel.app/share/0c6a21dd-a49a-43f4-99e3-1db4c0399d6a" title="CityQuest video summary" className="h-full w-full border-0" scrolling="no" style={{ overflow: "hidden", height: "100%" }} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
 					</div>
 				) : (
 					<div className="flex h-full flex-col items-center justify-center gap-6 px-6 text-center">
