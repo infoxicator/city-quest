@@ -19,6 +19,8 @@ export default defineSchema({
       v.literal('race'),
     ),
     avatarDataUrl: v.optional(v.string()),
+    location: v.string(),
+    characterCardUrl: v.optional(v.string()),
     createdAt: v.number(),
     welcomePrompt: v.optional(v.string()),
     lastPromptAt: v.optional(v.number()),
