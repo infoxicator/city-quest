@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { StoryResponse } from "@/components/remotion/schemata";
+import { StoryResponse } from "@/components/remotion/schemata";
 import type { VideoThemeSettings } from "@/components/remotion/types";
 
 export type GeneratorLoaderData = {
@@ -95,4 +95,3 @@ export type NewsGeneratorTheme = {
     invalidProfileUrlError: string;
   };
 };
-

@@ -482,7 +482,9 @@ Match the card's existing typography and color style.`,
 									</span>
 									<div>
 										<p className="text-2xl font-bold text-white">
-											Enjoy your {adventureDetails?.title ?? "Adventure"} Adventure!
+											{adventureDetails?.title
+												? `Enjoy your ${adventureDetails.title} Adventure!`
+												: "Enjoy your Adventure!"}
 										</p>
 										<p className="mt-2 text-sm text-amber-100/90">
 											Follow your guide's instructions below!
