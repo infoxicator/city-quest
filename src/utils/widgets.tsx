@@ -105,26 +105,15 @@ export async function registerWidgets(server: McpServer) {
 			title: "Start CityQuest Adventure",
 			description:
 				"Launch the CityQuest onboarding console to register a hero and begin a new mission.",
-			invokingMessage: `Painting the skyline for your hero...`,
-			invokedMessage: `CityQuest console ready.`,
-			resultMessage: "Your adventure console is open and ready.",
+			invokingMessage: `Starting your CityQuest adventure...`,
+			invokedMessage: `CityQuest adventure started. The game master is ready to guide you on your adventure.`,
+			resultMessage: "Your CityQuest adventure has started. Give me your name and snap a picture for your avatar. Select your adventure type and tap start and the game master will guide you",
 			widgetAccessible: true,
 			resultCanProduceWidget: true,
 			getHtml: () => Promise.resolve(createAdventureWidgetHtml(baseUrl)),
 			inputSchema: {} as const,
-			outputSchema: {
-				status: z
-					.string()
-					.describe("Short status note describing whether the console loaded."),
-				adventureUrl: z
-					.string()
-					.url()
-					.describe("URL that opens the CityQuest greeting experience."),
-			},
-			getStructuredContent: async () => ({
-				status: "ready",
-				adventureUrl: `${baseUrl}greeting`,
-			}),
+			outputSchema: {},
+			getStructuredContent: async () => ({}),
 		}),
 		createWidget({
 			name: "update-score",
@@ -333,53 +322,6 @@ export async function registerWidgets(server: McpServer) {
 				}
 				return payload;
 			},
-		}),
-		createWidget({
-			name: "calculator",
-			title: "Calculator",
-			description: "A simple calculator",
-			invokingMessage: `Getting your calculator ready`,
-			invokedMessage: `Here's your calculator`,
-			resultMessage: "The calculator has been rendered",
-			widgetAccessible: true,
-			resultCanProduceWidget: true,
-			getHtml: () => Promise.resolve(`<div>Hello, World!</div>`),
-			inputSchema: {
-				display: z
-					.string()
-					.optional()
-					.describe("The initial current display value on the calculator"),
-				previousValue: z
-					.number()
-					.optional()
-					.describe(
-						'The initial previous value on the calculator. For example, if the user says "I want to add 5 to a number" set this to 5',
-					),
-				operation: z
-					.enum(["+", "-", "*", "/"])
-					.optional()
-					.describe(
-						'The initial operation on the calculator. For example, if the user says "I want to add 5 to a number" set this to "+"',
-					),
-				waitingForNewValue: z
-					.boolean()
-					.optional()
-					.describe(
-						'Whether the calculator is waiting for a new value. For example, if the user says "I want to add 5 to a number" set this to true. If they say "subtract 3 from 4" set this to false.',
-					),
-				errorState: z
-					.boolean()
-					.optional()
-					.describe("Whether the calculator is in an error state"),
-			},
-			outputSchema: {
-				display: z.string().optional(),
-				previousValue: z.number().optional(),
-				operation: z.enum(["+", "-", "*", "/"]).optional(),
-				waitingForNewValue: z.boolean().optional(),
-				errorState: z.boolean().optional(),
-			},
-			getStructuredContent: async (args) => args,
 		}),
 	];
 

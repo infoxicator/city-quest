@@ -10,6 +10,10 @@ import {
 	useState,
 } from "react";
 
+import { getStartAdventurePrompt } from "../prompts/start-adventure";
+
+import { initMcpUi, sendMcpMessage } from "../mcp-ui/utils";
+
 import { cn } from "../lib/utils";
 import { api } from "../../convex/_generated/api";
 
@@ -195,6 +199,10 @@ export function GreetingWidget() {
 
 	const displayName = playerName.trim() || "Explorer";
 
+	useEffect(() => {
+		initMcpUi();
+	}, []);
+
 	const adventureDetails = ADVENTURE_OPTIONS.find(
 		(option) => option.id === selectedAdventure,
 	);
@@ -324,14 +332,18 @@ Match the card's existing typography and color style.`,
 		setErrorMessage("");
 		setStory(null);
 		try {
-			const gameId = await createGame({
-				playerName: displayName,
-				adventureType: selectedAdventure,
-				avatarDataUrl: avatarPreview ?? undefined,
-			});
+			console.log({displayName, selectedAdventure});
+			// const gameId = await createGame({
+			// 	playerName: displayName,
+			// 	adventureType: selectedAdventure,
+			// 	avatarDataUrl: avatarPreview ?? undefined,
+			// });
 
-			const response = await sendPrompt({ gameId });
-			setStory(response?.prompt ?? null);
+			// const response = await sendPrompt({ gameId });
+			//setStory(response?.prompt ?? null);
+			const prompt = getStartAdventurePrompt({ name: displayName, adventureType: selectedAdventure as 'tour' | 'foodie' | 'race', location: "London" });
+			console.log({prompt});
+			void sendMcpMessage('prompt', { prompt })
 			setStatus("success");
 		} catch (error) {
 			console.error(error);
