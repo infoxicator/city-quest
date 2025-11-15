@@ -26,6 +26,13 @@ const createTakePictureWidgetHtml = (baseUrl: string) => `<link rel="stylesheet"
 <script type="module" src="${baseUrl}widgets/take-picture.js"></script>
 `;
 
+const VIDEO_SUMMARY_RESOURCE_ORIGIN = new URL(
+	"https://city-quest-video-gen.vercel.app",
+).origin;
+const VIDEO_SUMMARY_API_ORIGIN = new URL(
+	"https://imageplustexttoimage.mcp-ui-flows-nanobanana.workers.dev",
+).origin;
+
 function clampToPercentage(value?: number | null) {
 	if (typeof value !== "number" || Number.isNaN(value)) {
 		return undefined;
@@ -81,6 +88,11 @@ type WidgetOutput<Input extends ZodRawShape, Output extends ZodRawShape> = {
 	}>;
 };
 
+type WidgetCspMetadata = {
+	connect_domains?: string[];
+	resource_domains?: string[];
+};
+
 type Widget<Input extends ZodRawShape, Output extends ZodRawShape> = {
 	name: string;
 	title: string;
@@ -92,6 +104,7 @@ type Widget<Input extends ZodRawShape, Output extends ZodRawShape> = {
 	widgetPrefersBorder?: boolean;
 	resultCanProduceWidget?: boolean;
 	getHtml: () => Promise<string>;
+	widgetCSP?: WidgetCspMetadata;
 } & WidgetOutput<Input, Output>;
 
 function createWidget<Input extends ZodRawShape, Output extends ZodRawShape>(
@@ -135,21 +148,25 @@ export async function registerWidgets(server: McpServer) {
 			outputSchema: {},
 			getStructuredContent: async () => ({}),
 		}),
-		createWidget({
-			name: "video-summary",
-			title: "CityQuest Video Summary",
+	createWidget({
+		name: "video-summary",
+		title: "CityQuest Video Summary",
 			description:
 				"At the end of your CityQuest adventure, generate a summary video of your journey.",
 			invokingMessage: `Stitching together your mission footage...`,
 			invokedMessage: `Video recap ready.`,
 			resultMessage: "The video summary is ready. Enjoy your recap!",
-			widgetAccessible: true,
-			resultCanProduceWidget: true,
-			getHtml: () => Promise.resolve(createVideoSummaryWidgetHtml(baseUrl)),
-			inputSchema: {},
-			outputSchema: {},
-			getStructuredContent: async () => ({}),
-		}),
+		widgetAccessible: true,
+		resultCanProduceWidget: true,
+		getHtml: () => Promise.resolve(createVideoSummaryWidgetHtml(baseUrl)),
+		widgetCSP: {
+			connect_domains: [VIDEO_SUMMARY_API_ORIGIN],
+			resource_domains: [VIDEO_SUMMARY_RESOURCE_ORIGIN],
+		},
+		inputSchema: {},
+		outputSchema: {},
+		getStructuredContent: async () => ({}),
+	}),
 		createWidget({
 			name: "take-picture",
 			title: "Take Picture",
@@ -186,10 +203,9 @@ export async function registerWidgets(server: McpServer) {
 					...resourceInfo,
 					metadata: {
 						"openai/widgetDescription": widget.description,
-						// "openai/widgetCSP": {
-						// 	connect_domains: [],
-						// 	resource_domains: [baseUrl],
-						// },
+						...(widget.widgetCSP
+							? { "openai/widgetCSP": widget.widgetCSP }
+							: {}),
 						...(widget.widgetPrefersBorder
 							? { "openai/widgetPrefersBorder": true }
 							: {}),
