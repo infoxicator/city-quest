@@ -21,6 +21,11 @@ const createVideoSummaryWidgetHtml = (baseUrl: string) => `<link rel="stylesheet
 <script type="module" src="${baseUrl}widgets/video-summary.js"></script>
 `;
 
+const createTakePictureWidgetHtml = (baseUrl: string) => `<link rel="stylesheet" href="${baseUrl}/widgets/greeting.css">
+<div id="tanstack-app-root"></div>
+<script type="module" src="${baseUrl}widgets/take-picture.js"></script>
+`;
+
 function clampToPercentage(value?: number | null) {
 	if (typeof value !== "number" || Number.isNaN(value)) {
 		return undefined;
@@ -126,202 +131,39 @@ export async function registerWidgets(server: McpServer) {
 			widgetAccessible: true,
 			resultCanProduceWidget: true,
 			getHtml: () => Promise.resolve(createScoreBoardWidgetHtml(baseUrl)),
-			inputSchema: {
-				playerName: z
-					.string()
-					.min(1)
-					.describe("Name of the player receiving the score update."),
-				score: z.number().describe("Total score after applying this update."),
-				progressPercentage: z
-					.number()
-					.min(0)
-					.max(100)
-					.optional()
-					.describe("Percent of the current quest that is complete."),
-				badges: z
-					.array(z.string())
-					.max(6)
-					.optional()
-					.describe(
-						"List of badge or perk names that were unlocked during the update.",
-					),
-				lastCheckpoint: z
-					.string()
-					.optional()
-					.describe(
-						"Narrative description of the newest checkpoint or action.",
-					),
-				scoreDelta: z
-					.number()
-					.optional()
-					.describe(
-						"How much the score changed in this update (positive or negative).",
-					),
-				status: z
-					.string()
-					.optional()
-					.describe("Short sentence that appears on the status line."),
-			},
-			outputSchema: {
-				playerName: z.string(),
-				score: z.number(),
-				progressPercentage: z.number().optional(),
-				badges: z.array(z.string()).optional(),
-				lastCheckpoint: z.string().optional(),
-				scoreDelta: z.number().optional(),
-				status: z.string(),
-				updatedAt: z.string().describe("ISO 8601 timestamp of the update."),
-			},
-			getStructuredContent: async (args) => {
-				const playerName = args.playerName.trim().length
-					? args.playerName.trim()
-					: "Adventurer";
-				const badges = (args.badges ?? [])
-					.map((badge) => badge.trim())
-					.filter(Boolean)
-					.slice(0, 6);
-				const progress = clampToPercentage(args.progressPercentage);
-				const payload: {
-					playerName: string;
-					score: number;
-					badges: string[];
-					lastCheckpoint: string;
-					status: string;
-					updatedAt: string;
-					progressPercentage?: number;
-					scoreDelta?: number;
-				} = {
-					playerName,
-					score: args.score,
-					badges,
-					lastCheckpoint:
-						(args.lastCheckpoint ?? "Awaiting new intel.").trim() ||
-						"Awaiting new intel.",
-					status:
-						(args.status ?? "Score beacon updated").trim() ||
-						"Score beacon updated",
-					updatedAt: new Date().toISOString(),
-				};
-				if (progress !== undefined) {
-					payload.progressPercentage = progress;
-				}
-				if (typeof args.scoreDelta === "number") {
-					payload.scoreDelta = args.scoreDelta;
-				}
-				return payload;
-			},
+			inputSchema: {} as const,
+			outputSchema: {},
+			getStructuredContent: async () => ({}),
 		}),
 		createWidget({
 			name: "video-summary",
 			title: "CityQuest Video Summary",
 			description:
-				"Embed a mission recording with a written recap, highlights, and follow-up action.",
+				"At the end of your CityQuest adventure, generate a summary video of your journey.",
 			invokingMessage: `Stitching together your mission footage...`,
 			invokedMessage: `Video recap ready.`,
-			resultMessage: "The video summary widget has been rendered.",
+			resultMessage: "The video summary is ready. Enjoy your recap!",
 			widgetAccessible: true,
 			resultCanProduceWidget: true,
 			getHtml: () => Promise.resolve(createVideoSummaryWidgetHtml(baseUrl)),
-			inputSchema: {
-				title: z
-					.string()
-					.min(1)
-					.describe("Title that will appear at the top of the video summary."),
-				videoUrl: z
-					.string()
-					.url()
-					.describe("Direct link to the video resource or livestream."),
-				summary: z
-					.string()
-					.min(1)
-					.describe(
-						"Multi-line narrative that describes what happens in the video.",
-					),
-				highlights: z
-					.array(z.string())
-					.max(8)
-					.optional()
-					.describe(
-						"Key bullets you would like highlighted under the summary.",
-					),
-				callToAction: z
-					.string()
-					.optional()
-					.describe("Label for the call-to-action button beneath the summary."),
-				ctaUrl: z
-					.string()
-					.url()
-					.optional()
-					.describe(
-						"URL or deeplink that should be opened when the CTA is clicked.",
-					),
-				duration: z
-					.string()
-					.optional()
-					.describe('Friendly duration label (e.g., "3m 42s").'),
-				thumbnailUrl: z
-					.string()
-					.url()
-					.optional()
-					.describe("Poster image to show when rendering a direct video tag."),
-			},
-			outputSchema: {
-				title: z.string(),
-				videoUrl: z.string().url(),
-				summary: z.string(),
-				highlights: z.array(z.string()).optional(),
-				callToAction: z.string().optional(),
-				ctaUrl: z.string().url().optional(),
-				duration: z.string().optional(),
-				thumbnailUrl: z.string().url().optional(),
-				status: z.string(),
-				embedUrl: z.string().url().optional(),
-			},
-			getStructuredContent: async (args) => {
-				const highlights = (args.highlights ?? [])
-					.map((item) => item.trim())
-					.filter(Boolean)
-					.slice(0, 8);
-				const embedUrl = getVideoEmbedUrl(args.videoUrl);
-				const payload: {
-					title: string;
-					videoUrl: string;
-					summary: string;
-					status: string;
-					highlights?: string[];
-					callToAction?: string;
-					ctaUrl?: string;
-					duration?: string;
-					thumbnailUrl?: string;
-					embedUrl?: string;
-				} = {
-					title: args.title.trim(),
-					videoUrl: args.videoUrl,
-					summary: args.summary.trim(),
-					status: "ready",
-				};
-				if (highlights.length) {
-					payload.highlights = highlights;
-				}
-				if (args.callToAction?.trim()) {
-					payload.callToAction = args.callToAction.trim();
-				}
-				if (args.ctaUrl) {
-					payload.ctaUrl = args.ctaUrl;
-				} else {
-					payload.ctaUrl = args.videoUrl;
-				}
-				if (args.duration?.trim()) {
-					payload.duration = args.duration.trim();
-				}
-				if (args.thumbnailUrl) {
-					payload.thumbnailUrl = args.thumbnailUrl;
-				}
-				if (embedUrl) {
-					payload.embedUrl = embedUrl;
-				}
-				return payload;
-			},
+			inputSchema: {},
+			outputSchema: {},
+			getStructuredContent: async () => ({}),
+		}),
+		createWidget({
+			name: "take-picture",
+			title: "Take Picture",
+			description:
+				"After arriving at your location, take a picture or a selfie for your CityQuest adventure.",
+			invokingMessage: `Preparing camera interface...`,
+			invokedMessage: `Camera ready.`,
+			resultMessage: "The picture widget is ready. Capture or upload an image to continue.",
+			widgetAccessible: true,
+			resultCanProduceWidget: true,
+			getHtml: () => Promise.resolve(createTakePictureWidgetHtml(baseUrl)),
+			inputSchema: {} as const,
+			outputSchema: {},
+			getStructuredContent: async () => ({}),
 		}),
 	];
 
