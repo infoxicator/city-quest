@@ -159,10 +159,6 @@ export async function registerWidgets(server: McpServer) {
 		widgetAccessible: true,
 		resultCanProduceWidget: true,
 		getHtml: () => Promise.resolve(createVideoSummaryWidgetHtml(baseUrl)),
-		widgetCSP: {
-			connect_domains: [VIDEO_SUMMARY_API_ORIGIN],
-			resource_domains: [VIDEO_SUMMARY_RESOURCE_ORIGIN],
-		},
 		inputSchema: {},
 		outputSchema: {},
 		getStructuredContent: async () => ({}),

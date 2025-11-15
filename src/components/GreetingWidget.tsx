@@ -364,47 +364,49 @@ Match the card's existing typography and color style.`,
 	]);
 
 	return (
-		<div className="min-h-[calc(100vh-5rem)] bg-gradient-to-b from-purple-950 via-amber-950 to-stone-950 py-12 text-white">
-			<div className="mx-auto flex w-full max-w-4xl justify-center px-6">
-				<section className="w-full max-w-2xl space-y-6 rounded-3xl border border-amber-800/20 bg-amber-950/20 p-8 shadow-2xl backdrop-blur">
-					<div className="relative overflow-hidden rounded-3xl border border-amber-700/30 bg-gradient-to-br from-amber-600/30 via-yellow-700/20 to-stone-800/90 p-8 shadow-inner">
+		<div className="min-h-[calc(100vh-5rem)] bg-gradient-to-b from-purple-950 via-amber-950 to-stone-950 py-6 sm:py-12 text-white">
+			<div className="mx-auto flex w-full max-w-4xl justify-center px-4 sm:px-6">
+				<section className="w-full max-w-2xl space-y-6 rounded-3xl border border-amber-800/20 bg-amber-950/20 p-4 sm:p-6 md:p-8 shadow-2xl backdrop-blur">
+					<div className="relative overflow-hidden rounded-3xl border border-amber-700/30 bg-gradient-to-br from-amber-600/30 via-yellow-700/20 to-stone-800/90 p-4 sm:p-6 md:p-8 shadow-inner">
 						<div className="pointer-events-none absolute inset-0 opacity-60">
 							<div className="absolute -top-10 -right-6 h-40 w-40 rounded-full bg-amber-400/40 blur-3xl" />
 							<div className="absolute top-12 -left-10 h-32 w-32 rounded-full bg-yellow-500/30 blur-2xl animate-pulse" />
 							<div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,215,0,0.2),_transparent_55%)]" />
 						</div>
 						<div className="relative z-10 space-y-4 text-center">
-							<h1 className="text-6xl font-black uppercase tracking-[0.25em] text-white drop-shadow-[0_8px_30px_rgba(217,119,6,0.55)]">
+							<h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-[0.1em] sm:tracking-[0.15em] md:tracking-[0.25em] text-white drop-shadow-[0_8px_30px_rgba(217,119,6,0.55)] break-words">
 								CityQuest
 							</h1>
 						</div>
 					</div>
 
-					<div className="space-y-3">
-						<label
-							className="text-sm font-medium text-amber-100"
-							htmlFor={playerNameInputId}
-						>
-							What should the guild call you?
-						</label>
-						<input
-							id={playerNameInputId}
-							className="w-full rounded-2xl border border-amber-700/30 bg-amber-950/20 px-4 py-3 text-base text-white placeholder:text-amber-200/60 focus:border-amber-400 focus:outline-none"
-							value={playerName}
-							onFocus={() => {
-								if (!hasEditedName) {
-									setPlayerName("");
+					{status !== "success" && (
+						<div className="space-y-3">
+							<label
+								className="text-sm font-medium text-amber-100"
+								htmlFor={playerNameInputId}
+							>
+								What should the guild call you?
+							</label>
+							<input
+								id={playerNameInputId}
+								className="w-full rounded-2xl border border-amber-700/30 bg-amber-950/20 px-4 py-3 text-base text-white placeholder:text-amber-200/60 focus:border-amber-400 focus:outline-none"
+								value={playerName}
+								onFocus={() => {
+									if (!hasEditedName) {
+										setPlayerName("");
+										setHasEditedName(true);
+										resetStory();
+									}
+								}}
+								onChange={(event) => {
+									setPlayerName(event.target.value);
 									setHasEditedName(true);
 									resetStory();
-								}
-							}}
-							onChange={(event) => {
-								setPlayerName(event.target.value);
-								setHasEditedName(true);
-								resetStory();
-							}}
-						/>
-					</div>
+								}}
+							/>
+						</div>
+					)}
 
 					<div className="space-y-3">
 						<div className="mx-auto max-w-md">
@@ -471,48 +473,70 @@ Match the card's existing typography and color style.`,
 						</div>
 					</div>
 
-					<div className="space-y-3">
-						<div className="grid gap-4 md:grid-cols-3">
-							{ADVENTURE_OPTIONS.map((option) => {
-								const isActive = option.id === selectedAdventure;
-								return (
-									<button
-										key={option.id}
-										type="button"
-										onClick={() => {
-											setSelectedAdventure(option.id);
-											resetStory();
-										}}
-										className={cn(
-											"group relative overflow-hidden rounded-3xl border-2 px-5 py-6 text-left transition hover:-translate-y-1 hover:border-amber-400",
-											isActive
-												? "border-amber-400 bg-amber-900/30 shadow-xl shadow-amber-600/40"
-												: "border-amber-800/20 bg-amber-950/20",
-										)}
-									>
-										<div
-											className={`absolute inset-0 opacity-70 blur-xl transition group-hover:opacity-90 ${option.accent}`}
-										>
-											&nbsp;
-										</div>
-										<div className="relative z-10 flex flex-col gap-3">
-											<span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-800/40 text-2xl">
-												{option.emoji}
-											</span>
-											<div>
-												<p className="text-lg font-semibold text-white">
-													{option.title}
-												</p>
-												<p className="text-xs text-amber-100/80">
-													{isActive ? "Selected" : "Tap to begin"}
-												</p>
-											</div>
-										</div>
-									</button>
-								);
-							})}
+					{status === "success" ? (
+						<div className="space-y-3">
+							<div className="rounded-3xl border-2 border-amber-400/60 bg-gradient-to-br from-amber-600/30 via-yellow-700/20 to-stone-800/90 p-6 text-center shadow-xl shadow-amber-600/40">
+								<div className="flex flex-col items-center gap-3">
+									<span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-800/40 text-3xl">
+										{adventureDetails?.emoji}
+									</span>
+									<div>
+										<p className="text-2xl font-bold text-white">
+											{adventureDetails?.title
+												? `Enjoy your ${adventureDetails.title} Adventure!`
+												: "Enjoy your Adventure!"}
+										</p>
+										<p className="mt-2 text-sm text-amber-100/90">
+											Follow your guide's instructions below!
+										</p>
+									</div>
+								</div>
+							</div>
 						</div>
-					</div>
+					) : (
+						<div className="space-y-3">
+							<div className="grid gap-4 md:grid-cols-3">
+								{ADVENTURE_OPTIONS.map((option) => {
+									const isActive = option.id === selectedAdventure;
+									return (
+										<button
+											key={option.id}
+											type="button"
+											onClick={() => {
+												setSelectedAdventure(option.id);
+												resetStory();
+											}}
+											className={cn(
+												"group relative overflow-hidden rounded-3xl border-2 px-5 py-6 text-center md:text-left transition hover:-translate-y-1 hover:border-amber-400",
+												isActive
+													? "border-amber-400 bg-amber-900/30 shadow-xl shadow-amber-600/40"
+													: "border-amber-800/20 bg-amber-950/20",
+											)}
+										>
+											<div
+												className={`absolute inset-0 opacity-70 blur-xl transition group-hover:opacity-90 ${option.accent}`}
+											>
+												&nbsp;
+											</div>
+											<div className="relative z-10 flex flex-col items-center md:items-start gap-3">
+												<span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-800/40 text-2xl">
+													{option.emoji}
+												</span>
+												<div className="text-center md:text-left">
+													<p className="text-lg font-semibold text-white">
+														{option.title}
+													</p>
+													<p className="text-xs text-amber-100/80">
+														{isActive ? "Selected" : "Tap to begin"}
+													</p>
+												</div>
+											</div>
+										</button>
+									);
+								})}
+							</div>
+						</div>
+					)}
 
 					{errorMessage && (
 						<p className="rounded-2xl border border-red-700/60 bg-red-900/20 px-4 py-3 text-sm text-red-200">
@@ -520,15 +544,17 @@ Match the card's existing typography and color style.`,
 						</p>
 					)}
 
-					<button
-						type="button"
-						onClick={() => void handleStartGame()}
-						disabled={status === "saving"}
-						className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-600 px-6 py-4 text-lg font-bold text-amber-950 shadow-lg shadow-amber-900/50 transition hover:from-amber-400 hover:to-yellow-500 disabled:cursor-not-allowed disabled:opacity-60"
-					>
-						<Sparkles className="h-5 w-5" />
-						{status === "saving" ? "Gathering Guild Scrolls..." : "Start Game"}
-					</button>
+					{status !== "success" && (
+						<button
+							type="button"
+							onClick={() => void handleStartGame()}
+							disabled={status === "saving"}
+							className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-600 px-6 py-4 text-lg font-bold text-amber-950 shadow-lg shadow-amber-900/50 transition hover:from-amber-400 hover:to-yellow-500 disabled:cursor-not-allowed disabled:opacity-60"
+						>
+							<Sparkles className="h-5 w-5" />
+							{status === "saving" ? "Gathering Guild Scrolls..." : "Start Game"}
+						</button>
+					)}
 				</section>
 			</div>
 		</div>

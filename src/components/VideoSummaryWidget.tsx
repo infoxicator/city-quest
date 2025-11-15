@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
+import SharedAdventure, { type LoaderData } from "./SharePlayer";
+import { StoryResponse } from "./remotion/schemata";
 
 const STORY_API_URL =
 	"https://imageplustexttoimage.mcp-ui-flows-nanobanana.workers.dev/api/payloads";
-const STORY_SHARE_URL = "https://city-quest-video-gen.vercel.app/share/";
-const MIN_HEIGHT = 540;
-const FRAME_PADDING = 96; // keeps some breathing room around the iframe
 
 const STORY_PAYLOAD = {
 	storyData: {
@@ -40,16 +39,11 @@ type ShareResponse = {
 };
 
 export function VideoSummaryWidget() {
-	const [frameHeight, setFrameHeight] = useState(() => {
-		if (typeof window === "undefined") {
-			return 720;
-		}
-		return Math.max(MIN_HEIGHT, window.innerHeight - FRAME_PADDING);
-	});
-
 	const [shareId, setShareId] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [loaderData, setLoaderData] = useState<LoaderData | null>(null);
+	const [isLoadingShareData, setIsLoadingShareData] = useState(false);
 
 	const fetchShareId = useCallback(
 		async (signal?: AbortSignal) => {
@@ -58,6 +52,8 @@ export function VideoSummaryWidget() {
 			setShareId(null);
 
 			try {
+				// Temporarily skip hitting the API; use the bundled payload for local previews.
+				/*
 				const response = await fetch(STORY_API_URL, {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -70,6 +66,15 @@ export function VideoSummaryWidget() {
 				}
 
 				const payload: ShareResponse = await response.json();
+				*/
+
+				if (import.meta.env.DEV) {
+					console.info(
+						`Skipping ${STORY_API_URL} and returning bundled story payload.`,
+					);
+				}
+
+				const payload: ShareResponse = { id: "local-story" };
 				const id = payload?.id;
 
 				if (!id) {
@@ -98,17 +103,100 @@ export function VideoSummaryWidget() {
 		[],
 	);
 
-	useEffect(() => {
-		if (typeof window === "undefined") {
-			return;
-		}
-		const updateHeight = () => {
-			setFrameHeight(Math.max(MIN_HEIGHT, window.innerHeight - FRAME_PADDING));
-		};
-		updateHeight();
-		window.addEventListener("resize", updateHeight);
-		return () => window.removeEventListener("resize", updateHeight);
-	}, []);
+	const fetchShareData = useCallback(
+		async (id: string, signal?: AbortSignal) => {
+			setIsLoadingShareData(true);
+			setLoaderData(null);
+
+			try {
+				const origin =
+					typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+
+				// Comment out the network fetch so we can develop with the baked-in payload.
+				/*
+				const res = await fetch(
+					`https://imageplustexttoimage.mcp-ui-flows-nanobanana.workers.dev/api/payloads/${id}`,
+					{ signal },
+				);
+
+				if (!res.ok) {
+					const message =
+						res.status === 404
+							? "We couldn't find that adventure."
+							: "Unable to load shared story.";
+					if (!signal?.aborted) {
+						setLoaderData({
+							status: "error",
+							message,
+							shareUrl: `${origin}/share/${id}`,
+						});
+					}
+					return;
+				}
+
+				const json = await res.json();
+				if (json?.type === "error") {
+					if (!signal?.aborted) {
+						setLoaderData({
+							status: "error",
+							message:
+								typeof json.message === "string"
+									? json.message
+									: "Unable to load shared story.",
+							shareUrl: `${origin}/share/${id}`,
+						});
+					}
+					return;
+				}
+
+				const payload = json?.payload;
+				const storyPayload = payload?.storyData ?? payload;
+				*/
+				const storyPayload = STORY_PAYLOAD.storyData;
+				const parsed = StoryResponse.safeParse(storyPayload);
+
+				if (!parsed.success) {
+					if (!signal?.aborted) {
+						setLoaderData({
+							status: "error",
+							message: "Shared story data is corrupted.",
+							shareUrl: `${origin}/share/${id}`,
+						});
+					}
+					return;
+				}
+
+				if (!signal?.aborted) {
+					setLoaderData({
+						status: "success",
+						storyData: parsed.data,
+						shareId: id,
+						shareUrl: `${origin}/share/${id}`,
+					});
+				}
+			} catch (err) {
+				const isAbortError = err instanceof DOMException && err.name === "AbortError";
+				if (isAbortError || signal?.aborted) {
+					return;
+				}
+
+				console.error("Failed to load shared story", err);
+				const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+				if (!signal?.aborted) {
+					setLoaderData({
+						status: "error",
+						message: "Something glitched while loading this adventure.",
+						shareUrl: `${origin}/share/${id}`,
+					});
+				}
+			} finally {
+				if (!signal?.aborted) {
+					setIsLoadingShareData(false);
+				}
+			}
+		},
+		[]
+	);
 
 	useEffect(() => {
 		const controller = new AbortController();
@@ -116,11 +204,24 @@ export function VideoSummaryWidget() {
 		return () => controller.abort();
 	}, [fetchShareId]);
 
+	useEffect(() => {
+		if (!shareId) {
+			setLoaderData(null);
+			return;
+		}
+
+		const controller = new AbortController();
+		void fetchShareData(shareId, controller.signal);
+		return () => controller.abort();
+	}, [shareId, fetchShareData]);
+
 	const statusMessage = error
 		? "Signal lost // waiting for relay"
-		: isLoading
+		: isLoading || isLoadingShareData
 		  ? "Calibrating // syncing cinematic memory"
-		  : "Share ready // streaming now";
+		  : loaderData?.status === "error"
+		    ? "Error // story data unavailable"
+		    : "Share ready // streaming now";
 
 	return (
 		<div className="min-h-screen w-full bg-gradient-to-b from-slate-950 via-zinc-950 to-amber-950 px-4 py-10 text-white">
@@ -136,20 +237,12 @@ export function VideoSummaryWidget() {
 					Once the relay responds, the stream will materialize below.
 				</p>
 			</header>
-			<div
-				className="relative mx-auto w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-black/40 shadow-2xl backdrop-blur"
-				style={{ height: frameHeight }}
-			>
-				{shareId ? (
-					<iframe
-						src={`${STORY_SHARE_URL}${shareId}`}
-						title="CityQuest video summary"
-						className="h-full w-full border-0"
-						scrolling="no"
-						style={{ overflow: "hidden", height: frameHeight }}
-						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-						allowFullScreen
-					/>
+			<div className="relative mx-auto w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-black/40 shadow-2xl backdrop-blur">
+				{loaderData ? (
+					<div className="w-full">
+						<SharedAdventure loaderData={loaderData} />
+						{/* <iframe src="https://city-quest-video-gen.vercel.app/share/0c6a21dd-a49a-43f4-99e3-1db4c0399d6a" title="CityQuest video summary" className="h-full w-full border-0" scrolling="no" style={{ overflow: "hidden", height: "100%" }} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /> */}
+					</div>
 				) : (
 					<div className="flex h-full flex-col items-center justify-center gap-6 px-6 text-center">
 						<div className="flex flex-col items-center gap-3">
