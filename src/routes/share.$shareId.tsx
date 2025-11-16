@@ -1,77 +1,99 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "convex/react";
+import { useEffect, useState } from "react";
 import SharedAdventure, { HydrateFallback, type LoaderData } from "@/components/SharePlayer";
 import { StoryResponse } from "@/components/remotion/schemata";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 
-function getOrigin(): string {
-  if (typeof window !== "undefined") {
-    return window.location.origin;
+function getBaseUrl(): string {
+  if (import.meta.env.DEV) {
+    return "http://localhost:3000";
   }
-  // Fallback for SSR - you may want to use environment variables or context
-  return "http://localhost:3000";
+  return "https://city-quest.netlify.app";
 }
 
 export const Route = createFileRoute("/share/$shareId")({
-  loader: async ({ params }) => {
-    const shareId = params.shareId;
-    const origin = getOrigin();
+  component: () => {
+    const { shareId } = Route.useParams();
+    const [loaderData, setLoaderData] = useState<LoaderData | null>(null);
 
-    if (!shareId) {
-      return {
-        status: "error",
-        message: "Missing share identifier.",
-        shareUrl: origin,
-      } satisfies LoaderData;
-    }
+    // Fetch story from Convex database
+    const storyData = useQuery(
+      api.games.getStory,
+      shareId && shareId !== "local-story" ? { storyId: shareId as Id<"stories"> } : "skip",
+    );
 
-    try {
-      const res = await fetch(`https://imageplustexttoimage.mcp-ui-flows-nanobanana.workers.dev/api/payloads/${shareId}`);
-      if (!res.ok) {
-        const message = res.status === 404 ? "We couldn't find that adventure." : "Unable to load shared story.";
-        return {
+    useEffect(() => {
+      const baseUrl = getBaseUrl();
+
+      if (!shareId) {
+        setLoaderData({
           status: "error",
-          message,
-          shareUrl: `${origin}/share/${shareId}`,
-        } satisfies LoaderData;
-      }
-      const json = await res.json();
-      if (json?.type === "error") {
-        return {
-          status: "error",
-          message: typeof json.message === "string" ? json.message : "Unable to load shared story.",
-          shareUrl: `${origin}/share/${shareId}`,
-        } satisfies LoaderData;
+          message: "Missing share identifier.",
+          shareUrl: baseUrl,
+        });
+        return;
       }
 
-      const payload = json?.payload;
-      const storyPayload = payload?.storyData ?? payload;
+      // If it's a local story, skip database lookup
+      if (shareId === "local-story") {
+        setLoaderData({
+          status: "error",
+          message: "Invalid story ID.",
+          shareUrl: `${baseUrl}/share/${shareId}`,
+        });
+        return;
+      }
+
+      // Wait for story data to load
+      if (storyData === undefined) {
+        return;
+      }
+
+      // Story not found
+      if (!storyData) {
+        setLoaderData({
+          status: "error",
+          message: "We couldn't find that adventure.",
+          shareUrl: `${baseUrl}/share/${shareId}`,
+        });
+        return;
+      }
+
+      // Transform story data to match StoryResponse schema
+      const storyPayload = {
+        title: storyData.title,
+        date: storyData.date,
+        mainImage: storyData.mainImage,
+        slides: storyData.slides,
+      };
+
       const parsed = StoryResponse.safeParse(storyPayload);
       if (!parsed.success) {
-        return {
+        setLoaderData({
           status: "error",
           message: "Shared story data is corrupted.",
-          shareUrl: `${origin}/share/${shareId}`,
-        } satisfies LoaderData;
+          shareUrl: `${baseUrl}/share/${shareId}`,
+        });
+        return;
       }
 
-      return {
+      setLoaderData({
         status: "success",
         storyData: parsed.data,
         shareId,
-        shareUrl: `${origin}/share/${shareId}`,
-      } satisfies LoaderData;
-    } catch (error) {
-      console.error("Failed to load shared story", error);
-      return {
-        status: "error",
-        message: "Something glitched while loading this adventure.",
-        shareUrl: `${origin}/share/${shareId}`,
-      } satisfies LoaderData;
+        shareUrl: `${baseUrl}/share/${shareId}`,
+      });
+    }, [shareId, storyData]);
+
+    // Show loading state while fetching
+    if (!loaderData) {
+      return <HydrateFallback />;
     }
-  },
-  pendingComponent: HydrateFallback,
-  component: () => {
-    const loaderData = Route.useLoaderData();
+
     return <SharedAdventure loaderData={loaderData} />;
   },
+  pendingComponent: HydrateFallback,
 });
 

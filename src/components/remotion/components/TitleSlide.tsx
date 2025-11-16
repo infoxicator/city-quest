@@ -121,7 +121,7 @@ export const TitleSlide: React.FC<TitleSlideProps> = ({ title, image, theme }) =
                 boxShadow: "0 10px 24px rgba(0,0,0,0.35)",
               }}
             >
-            Breaking News
+            City Quest
           </span>
 
           <h1

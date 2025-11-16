@@ -165,7 +165,14 @@ export async function registerWidgets(server: McpServer) {
 		widgetAccessible: true,
 		resultCanProduceWidget: true,
 		getHtml: () => Promise.resolve(createVideoSummaryWidgetHtml(baseUrl)),
-		inputSchema: {},
+		inputSchema: {
+			gameId: z.string().describe("The game ID this video summary is for. Required."),
+			slides: z.array(
+				z.object({
+					text: z.string().max(200).describe("Summary of every quest completed"),
+				}),
+			).describe("Array of slides, each containing a summary of a completed quest"),
+		} as const,
 		outputSchema: {},
 		getStructuredContent: async () => ({}),
 	}),
