@@ -3,6 +3,7 @@ import { Award, Coins, Sparkles, Star } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import { useWidgetProps, useWidgetInput } from "../hooks";
 
 type ScoreBoardData = {
 	playerName?: string;
@@ -20,120 +21,154 @@ const fallbackData: ScoreBoardData = {
 	updatedAt: new Date().toISOString(),
 };
 
-function latestToolOutput(): ScoreBoardData | null {
-	if (typeof window === "undefined") return null;
-	const win = window as any;
-	
-	if (win.__MCP_UI_INITIAL_RENDER_DATA__?.toolOutput) {
-		return win.__MCP_UI_INITIAL_RENDER_DATA__.toolOutput as ScoreBoardData;
-	}
-	if (win.__MCP_UI_INITIAL_RENDER_DATA__) {
-		return win.__MCP_UI_INITIAL_RENDER_DATA__ as ScoreBoardData;
-	}
-	if (win.openai?.toolOutput) {
-		return win.openai.toolOutput as ScoreBoardData;
-	}
-	if (win.__MCP_WIDGET_LAST_TOOL_OUTPUT__) {
-		return win.__MCP_WIDGET_LAST_TOOL_OUTPUT__ as ScoreBoardData;
-	}
-	return null;
-}
-
-function getToolInput() {
-	if (typeof window === "undefined") return null;
-	const win = window as any;
-	return win.__MCP_UI_INITIAL_RENDER_DATA__?.toolInput || win.openai?.toolInput || null;
-}
 
 export function ScoreBoardWidget() {
 	const updateProgress = useMutation(api.games.updatePlayerProgress);
-	const [data, setData] = useState<ScoreBoardData>(() => {
-		const initial = latestToolOutput();
-		return { ...fallbackData, ...initial };
-	});
-	const hasProcessedToolInput = useRef(false);
+	
+	// Get toolInput and toolOutput using hooks
+	const toolInput = useWidgetInput<{ gameId?: string; adventureType?: string; level?: number; gold?: number; badge?: string }>();
+	const toolOutput = useWidgetProps<ScoreBoardData>(fallbackData);
+	
+	const [data, setData] = useState<ScoreBoardData>(toolOutput);
+	const hasProcessedToolInput = useRef<string | null>(null);
+	const lastMutationResult = useRef<ScoreBoardData | null>(null);
 
 	// Get gameId from toolInput
-	const toolInput = getToolInput();
-	console.log('city-quest-log:score-board', toolInput);
 	const gameId = toolInput?.gameId as Id<"games"> | undefined;
 
-	// Fetch current progress from Convex
+	console.log('[ScoreBoardWidget] toolInput:', toolInput);
+	console.log('[ScoreBoardWidget] gameId:', gameId);
+	console.log('[ScoreBoardWidget] toolOutput:', toolOutput);
+
+	// Fetch current progress from Convex (will refetch after mutation)
 	const progress = useQuery(
 		api.games.getPlayerProgress,
 		gameId ? { gameId } : "skip"
 	);
 
-	// Update local data when progress is fetched
+	console.log('[ScoreBoardWidget] progress from query:', progress);
+
+	// Handle toolInput updates - update database when toolInput is received
 	useEffect(() => {
+		console.log('[ScoreBoardWidget] toolInput effect triggered', { toolInput, gameId });
+		
+		if (!toolInput || !gameId) {
+			console.log('[ScoreBoardWidget] No toolInput or gameId, resetting');
+			hasProcessedToolInput.current = null;
+			return;
+		}
+
+		// Create a signature for this toolInput to avoid duplicate processing
+		const inputSignature = JSON.stringify({
+			gameId,
+			level: toolInput.level,
+			gold: toolInput.gold,
+			badge: toolInput.badge,
+		});
+
+		console.log('[ScoreBoardWidget] Input signature:', inputSignature);
+		console.log('[ScoreBoardWidget] Previously processed:', hasProcessedToolInput.current);
+
+		// Skip if we've already processed this exact input
+		if (hasProcessedToolInput.current === inputSignature) {
+			console.log('[ScoreBoardWidget] Already processed this input, skipping');
+			return;
+		}
+
+		// Check if there are any updates to apply
+		const hasUpdates = toolInput.level !== undefined || toolInput.gold !== undefined || toolInput.badge;
+		
+		console.log('[ScoreBoardWidget] Has updates:', hasUpdates, {
+			level: toolInput.level,
+			gold: toolInput.gold,
+			badge: toolInput.badge,
+		});
+		
+		if (hasUpdates) {
+			hasProcessedToolInput.current = inputSignature;
+			console.log('[ScoreBoardWidget] Calling updateProgress mutation with:', {
+				gameId,
+				level: toolInput.level,
+				gold: toolInput.gold,
+				badge: toolInput.badge,
+			});
+			
+			// Update database - this will create or update the record
+			updateProgress({
+				gameId,
+				level: toolInput.level,
+				gold: toolInput.gold,
+				badge: toolInput.badge,
+			})
+				.then((updatedProgress) => {
+					console.log('[ScoreBoardWidget] Mutation successful, updated progress:', updatedProgress);
+					// Store mutation result
+					const mutationData = {
+						playerName: updatedProgress.playerName,
+						level: updatedProgress.level,
+						gold: updatedProgress.gold,
+						badges: updatedProgress.badges,
+						updatedAt: new Date().toISOString(),
+					};
+					lastMutationResult.current = mutationData;
+					// Update local state immediately with the mutation result
+					// This ensures we display the final result right after the update
+					setData(mutationData);
+					console.log('[ScoreBoardWidget] Local state updated with mutation result:', mutationData);
+				})
+				.catch((error) => {
+					console.error('[ScoreBoardWidget] Failed to update progress:', error);
+					hasProcessedToolInput.current = null;
+				});
+		} else {
+			console.log('[ScoreBoardWidget] No updates to apply');
+		}
+	}, [toolInput, gameId, updateProgress]);
+
+	// Update local data when progress is fetched (after mutation completes and query refetches)
+	// This ensures we always display the latest data from the database
+	useEffect(() => {
+		console.log('[ScoreBoardWidget] Progress effect triggered', { progress, toolOutput, gameId, lastMutationResult: lastMutationResult.current });
+		
 		if (progress) {
-			setData({
+			// Only update from query if we don't have a recent mutation result
+			// This prevents the query from overriding the mutation result
+			const progressData = {
 				playerName: progress.playerName,
 				level: progress.level,
 				gold: progress.gold,
 				badges: progress.badges,
 				updatedAt: new Date().toISOString(),
-			});
-		}
-	}, [progress]);
-
-	// Handle toolInput updates - update database when toolInput is received
-	useEffect(() => {
-		if (toolInput && gameId && !hasProcessedToolInput.current) {
-			const hasUpdates = toolInput.level !== undefined || toolInput.gold !== undefined || toolInput.badge;
+			};
 			
-			if (hasUpdates) {
-				hasProcessedToolInput.current = true;
-				
-				// Update database
-				updateProgress({
-					gameId,
-					level: toolInput.level,
-					gold: toolInput.gold,
-					badge: toolInput.badge,
-				}).catch((error) => {
-					console.error("Failed to update progress:", error);
-					hasProcessedToolInput.current = false;
-				});
+			// Check if query result matches mutation result (to avoid unnecessary updates)
+			const mutationMatches = lastMutationResult.current && 
+				lastMutationResult.current.level === progressData.level &&
+				lastMutationResult.current.gold === progressData.gold &&
+				JSON.stringify(lastMutationResult.current.badges) === JSON.stringify(progressData.badges);
+			
+			if (!mutationMatches) {
+				console.log('[ScoreBoardWidget] Setting data from progress query:', progressData);
+				setData(progressData);
+			} else {
+				console.log('[ScoreBoardWidget] Query result matches mutation result, keeping mutation result');
+			}
+		} else if (toolOutput && !gameId) {
+			// Only use toolOutput if we don't have a gameId (fallback for non-database mode)
+			console.log('[ScoreBoardWidget] Setting data from toolOutput (no gameId):', toolOutput);
+			setData(toolOutput);
+		} else if (gameId && !progress) {
+			// If we have a gameId but no progress, show fallback or last mutation result
+			if (lastMutationResult.current) {
+				console.log('[ScoreBoardWidget] gameId exists but no progress yet, using last mutation result');
+				setData(lastMutationResult.current);
+			} else {
+				console.log('[ScoreBoardWidget] gameId exists but no progress yet, showing fallback');
+				setData(fallbackData);
 			}
 		}
+	}, [progress, toolOutput, gameId]);
 
-		// Reset flag when toolInput changes
-		if (!toolInput || !gameId) {
-			hasProcessedToolInput.current = false;
-		}
-	}, [toolInput?.level, toolInput?.gold, toolInput?.badge, gameId, updateProgress]);
-
-	// Sync with toolOutput for immediate display
-	useEffect(() => {
-		let lastSignature = "";
-
-		const sync = () => {
-			const toolOutput = latestToolOutput();
-			if (toolOutput) {
-				const payload = { ...fallbackData, ...toolOutput };
-				const nextSignature = JSON.stringify(payload);
-				if (nextSignature !== lastSignature) {
-					lastSignature = nextSignature;
-					setData((prev) => ({ ...prev, ...payload }));
-					if (typeof window !== "undefined") {
-						(window as any).__MCP_WIDGET_LAST_TOOL_OUTPUT__ = payload;
-					}
-				}
-			}
-		};
-
-		sync();
-		const interval = setInterval(sync, 700);
-
-		const handleMessage = () => sync();
-		window.addEventListener("message", handleMessage);
-
-		return () => {
-			clearInterval(interval);
-			window.removeEventListener("message", handleMessage);
-		};
-	}, []);
 
 	const level = typeof data.level === "number" && !Number.isNaN(data.level) ? data.level : 0;
 	const gold = typeof data.gold === "number" && !Number.isNaN(data.gold) ? data.gold : 0;
@@ -144,6 +179,8 @@ export function ScoreBoardWidget() {
 				minute: "2-digit",
 		  })
 		: "--:--";
+
+	console.log('[ScoreBoardWidget] Current displayed data:', { level, gold, badges, playerName: data.playerName });
 
 	return (
 		<div className="min-h-[calc(100vh-5rem)] bg-gradient-to-b from-purple-950 via-amber-950 to-stone-950 py-12 text-white">

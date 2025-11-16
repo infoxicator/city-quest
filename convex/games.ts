@@ -154,15 +154,21 @@ export const updatePlayerProgress = mutation({
     badge: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    console.log('[updatePlayerProgress] Called with args:', args);
+    
     const game = await ctx.db.get(args.gameId)
     if (!game) {
+      console.error('[updatePlayerProgress] Game not found:', args.gameId);
       throw new Error('Game not found')
     }
+
+    console.log('[updatePlayerProgress] Found game:', { playerName: game.playerName, adventureType: game.adventureType });
 
     const adventureType = game.adventureType as AdventureType
     const availableBadges = getAvailableBadges(adventureType)
 
     if (args.badge && !availableBadges.includes(args.badge)) {
+      console.error('[updatePlayerProgress] Invalid badge:', args.badge, 'for adventure type:', adventureType);
       throw new Error(
         `Invalid badge "${args.badge}" for adventure type "${adventureType}". Available badges: ${availableBadges.join(', ')}`,
       )
@@ -173,19 +179,30 @@ export const updatePlayerProgress = mutation({
       .withIndex('gameId', (q) => q.eq('gameId', args.gameId))
       .first()
 
+    console.log('[updatePlayerProgress] Existing progress:', progress);
+
     const now = Date.now()
 
     if (!progress) {
-      const progressId = await ctx.db.insert('playerProgress', {
+      console.log('[updatePlayerProgress] Creating new progress record');
+      const newProgress = {
         gameId: args.gameId,
         level: args.level ?? 0,
         gold: args.gold ?? 0,
         badges: args.badge ? [args.badge] : [],
         adventureType,
         updatedAt: now,
-      })
+      };
+      console.log('[updatePlayerProgress] Inserting:', newProgress);
+      const progressId = await ctx.db.insert('playerProgress', newProgress)
       progress = await ctx.db.get(progressId)
+      console.log('[updatePlayerProgress] Created progress:', progress);
     } else {
+      console.log('[updatePlayerProgress] Updating existing progress');
+      const oldLevel = progress.level;
+      const oldGold = progress.gold;
+      const oldBadges = progress.badges;
+      
       const newLevel = args.level !== undefined ? progress.level + args.level : progress.level
       const newGold = args.gold !== undefined ? progress.gold + args.gold : progress.gold
       const newBadges = args.badge
@@ -193,6 +210,18 @@ export const updatePlayerProgress = mutation({
           ? progress.badges
           : [...progress.badges, args.badge]
         : progress.badges
+
+      console.log('[updatePlayerProgress] Update values:', {
+        oldLevel,
+        levelIncrement: args.level,
+        newLevel,
+        oldGold,
+        goldIncrement: args.gold,
+        newGold,
+        oldBadges,
+        badgeToAdd: args.badge,
+        newBadges,
+      });
 
       await ctx.db.patch(progress._id, {
         level: newLevel,
@@ -202,20 +231,24 @@ export const updatePlayerProgress = mutation({
       })
 
       progress = await ctx.db.get(progress._id)
+      console.log('[updatePlayerProgress] Updated progress:', progress);
     }
 
     if (!progress) {
+      console.error('[updatePlayerProgress] Failed to create or update progress');
       throw new Error('Failed to create or update progress')
     }
 
     const updatedGame = await ctx.db.get(args.gameId)
-    return {
+    const result = {
       level: progress.level,
       gold: progress.gold,
       badges: progress.badges,
       adventureType: progress.adventureType,
       playerName: updatedGame?.playerName || '',
-    }
+    };
+    console.log('[updatePlayerProgress] Returning result:', result);
+    return result;
   },
 })
 
