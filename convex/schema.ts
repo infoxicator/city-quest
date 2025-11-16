@@ -25,4 +25,11 @@ export default defineSchema({
     welcomePrompt: v.optional(v.string()),
     lastPromptAt: v.optional(v.number()),
   }),
+  pictures: defineTable({
+    gameId: v.id('games'),
+    imageUrl: v.string(),
+    location: v.optional(v.string()),
+    description: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index('gameId', ['gameId']),
 })

@@ -63,6 +63,26 @@ export const sendPrompt = mutation({
   },
 })
 
+export const addPicture = mutation({
+  args: {
+    gameId: v.id('games'),
+    imageUrl: v.string(),
+    location: v.optional(v.string()),
+    description: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const pictureId = await ctx.db.insert('pictures', {
+      gameId: args.gameId,
+      imageUrl: args.imageUrl,
+      location: args.location,
+      description: args.description,
+      createdAt: Date.now(),
+    })
+
+    return pictureId
+  },
+})
+
 function buildCityQuestPrompt(game: Doc<'games'>) {
   const pathFlavor =
     ADVENTURE_FLAVORS[game.adventureType as AdventureType] ??

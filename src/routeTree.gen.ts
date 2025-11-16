@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VideoRouteImport } from './routes/video'
 import { Route as ScoreRouteImport } from './routes/score'
+import { Route as PictureRouteImport } from './routes/picture'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as GreetingRouteImport } from './routes/greeting'
 import { Route as IndexRouteImport } from './routes/index'
@@ -24,6 +25,11 @@ const VideoRoute = VideoRouteImport.update({
 const ScoreRoute = ScoreRouteImport.update({
   id: '/score',
   path: '/score',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PictureRoute = PictureRouteImport.update({
+  id: '/picture',
+  path: '/picture',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/greeting': typeof GreetingRoute
   '/mcp': typeof McpRoute
+  '/picture': typeof PictureRoute
   '/score': typeof ScoreRoute
   '/video': typeof VideoRoute
   '/share/$shareId': typeof ShareShareIdRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/greeting': typeof GreetingRoute
   '/mcp': typeof McpRoute
+  '/picture': typeof PictureRoute
   '/score': typeof ScoreRoute
   '/video': typeof VideoRoute
   '/share/$shareId': typeof ShareShareIdRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/greeting': typeof GreetingRoute
   '/mcp': typeof McpRoute
+  '/picture': typeof PictureRoute
   '/score': typeof ScoreRoute
   '/video': typeof VideoRoute
   '/share/$shareId': typeof ShareShareIdRoute
@@ -78,16 +87,25 @@ export interface FileRouteTypes {
     | '/'
     | '/greeting'
     | '/mcp'
+    | '/picture'
     | '/score'
     | '/video'
     | '/share/$shareId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/greeting' | '/mcp' | '/score' | '/video' | '/share/$shareId'
+  to:
+    | '/'
+    | '/greeting'
+    | '/mcp'
+    | '/picture'
+    | '/score'
+    | '/video'
+    | '/share/$shareId'
   id:
     | '__root__'
     | '/'
     | '/greeting'
     | '/mcp'
+    | '/picture'
     | '/score'
     | '/video'
     | '/share/$shareId'
@@ -97,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GreetingRoute: typeof GreetingRoute
   McpRoute: typeof McpRoute
+  PictureRoute: typeof PictureRoute
   ScoreRoute: typeof ScoreRoute
   VideoRoute: typeof VideoRoute
   ShareShareIdRoute: typeof ShareShareIdRoute
@@ -116,6 +135,13 @@ declare module '@tanstack/react-router' {
       path: '/score'
       fullPath: '/score'
       preLoaderRoute: typeof ScoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/picture': {
+      id: '/picture'
+      path: '/picture'
+      fullPath: '/picture'
+      preLoaderRoute: typeof PictureRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -153,6 +179,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GreetingRoute: GreetingRoute,
   McpRoute: McpRoute,
+  PictureRoute: PictureRoute,
   ScoreRoute: ScoreRoute,
   VideoRoute: VideoRoute,
   ShareShareIdRoute: ShareShareIdRoute,

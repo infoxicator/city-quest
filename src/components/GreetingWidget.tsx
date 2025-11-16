@@ -180,6 +180,7 @@ export function GreetingWidget() {
 	const [hasEditedName, setHasEditedName] = useState(false);
 	const [selectedAdventure, setSelectedAdventure] =
 		useState<AdventureType>("tour");
+	const [location, setLocation] = useState("");
 	const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 	const [avatarFile, setAvatarFile] = useState<File | null>(null);
 	const [isDragging, setIsDragging] = useState(false);
@@ -193,6 +194,7 @@ export function GreetingWidget() {
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const playerNameInputId = useId();
+	const locationInputId = useId();
 
 	const createGame = useMutation(api.games.createGame);
 	const sendPrompt = useMutation(api.games.sendPrompt);
@@ -201,6 +203,39 @@ export function GreetingWidget() {
 
 	useEffect(() => {
 		initMcpUi();
+	}, []);
+
+	useEffect(() => {
+		if (!navigator.geolocation) {
+			return;
+		}
+
+		navigator.geolocation.getCurrentPosition(
+			async (position) => {
+				try {
+					const { latitude, longitude } = position.coords;
+					const response = await fetch(
+						`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
+					);
+					const data = await response.json();
+					const city =
+						data.address?.city ||
+						data.address?.town ||
+						data.address?.village ||
+						data.address?.county ||
+						data.address?.state ||
+						"";
+					if (city) {
+						setLocation(city);
+					}
+				} catch (error) {
+					console.error("Error fetching location:", error);
+				}
+			},
+			(error) => {
+				console.error("Error getting geolocation:", error);
+			},
+		);
 	}, []);
 
 	const adventureDetails = ADVENTURE_OPTIONS.find(
@@ -331,17 +366,23 @@ Match the card's existing typography and color style.`,
 		setErrorMessage("");
 		setStory(null);
 		try {
-			console.log({displayName, selectedAdventure});
+			const locationValue = location.trim() || "London";
+			console.log({displayName, selectedAdventure, location: locationValue});
 			const gameId = await createGame({
 				playerName: displayName,
 				adventureType: selectedAdventure,
-				location: "London",
+				location: locationValue,
 				characterCardUrl: combinedImage ?? undefined,
 			});
 
+			// Store gameId in localStorage for use in other components
+			if (typeof window !== 'undefined') {
+				localStorage.setItem('cityQuestGameId', gameId);
+			}
+
 			// const response = await sendPrompt({ gameId });
 			//setStory(response?.prompt ?? null);
-			const prompt = getStartAdventurePrompt({ name: displayName, adventureType: selectedAdventure as 'tour' | 'foodie' | 'race', location: "London" });
+			const prompt = getStartAdventurePrompt({ gameId, name: displayName, adventureType: selectedAdventure as 'tour' | 'foodie' | 'race', location: locationValue });
 			console.log({prompt, gameId});
 			void sendMcpMessage('prompt', { prompt })
 			setStatus("success");
@@ -358,6 +399,7 @@ Match the card's existing typography and color style.`,
 		combinedImage,
 		createGame,
 		displayName,
+		location,
 		selectedAdventure,
 		sendPrompt,
 		status,
@@ -381,31 +423,51 @@ Match the card's existing typography and color style.`,
 					</div>
 
 					{status !== "success" && (
-						<div className="space-y-3">
-							<label
-								className="text-sm font-medium text-amber-100"
-								htmlFor={playerNameInputId}
-							>
-								What should the guild call you?
-							</label>
-							<input
-								id={playerNameInputId}
-								className="w-full rounded-2xl border border-amber-700/30 bg-amber-950/20 px-4 py-3 text-base text-white placeholder:text-amber-200/60 focus:border-amber-400 focus:outline-none"
-								value={playerName}
-								onFocus={() => {
-									if (!hasEditedName) {
-										setPlayerName("");
+						<>
+							<div className="space-y-3">
+								<label
+									className="text-sm font-medium text-amber-100"
+									htmlFor={playerNameInputId}
+								>
+									What should the guild call you?
+								</label>
+								<input
+									id={playerNameInputId}
+									className="w-full rounded-2xl border border-amber-700/30 bg-amber-950/20 px-4 py-3 text-base text-white placeholder:text-amber-200/60 focus:border-amber-400 focus:outline-none"
+									value={playerName}
+									onFocus={() => {
+										if (!hasEditedName) {
+											setPlayerName("");
+											setHasEditedName(true);
+											resetStory();
+										}
+									}}
+									onChange={(event) => {
+										setPlayerName(event.target.value);
 										setHasEditedName(true);
 										resetStory();
-									}
-								}}
-								onChange={(event) => {
-									setPlayerName(event.target.value);
-									setHasEditedName(true);
-									resetStory();
-								}}
-							/>
-						</div>
+									}}
+								/>
+							</div>
+							<div className="space-y-3">
+								<label
+									className="text-sm font-medium text-amber-100"
+									htmlFor={locationInputId}
+								>
+									Where do you want to play?
+								</label>
+								<input
+									id={locationInputId}
+									className="w-full rounded-2xl border border-amber-700/30 bg-amber-950/20 px-4 py-3 text-base text-white placeholder:text-amber-200/60 focus:border-amber-400 focus:outline-none"
+									value={location}
+									placeholder="i.e London, Central Park, etc."
+									onChange={(event) => {
+										setLocation(event.target.value);
+										resetStory();
+									}}
+								/>
+							</div>
+						</>
 					)}
 
 					<div className="space-y-3">
