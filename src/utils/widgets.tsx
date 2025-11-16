@@ -167,14 +167,18 @@ export async function registerWidgets(server: McpServer) {
 			name: "take-picture",
 			title: "Take Picture",
 			description:
-				"After arriving at your location, take a picture or a selfie for your CityQuest adventure.",
+				"After arriving at your location, take a picture or a selfie for your CityQuest adventure to claim a reward",
 			invokingMessage: `Preparing camera interface...`,
 			invokedMessage: `Camera ready.`,
 			resultMessage: "The picture widget is ready. Capture or upload an image to continue.",
 			widgetAccessible: true,
 			resultCanProduceWidget: true,
 			getHtml: () => Promise.resolve(createTakePictureWidgetHtml(baseUrl)),
-			inputSchema: {} as const,
+			inputSchema: {
+				gameId: z.string().optional().describe("The game ID to associate the picture with. If not provided, will be retrieved from URL params or localStorage."),
+				location: z.string().optional().describe("The location name where the picture is being taken."),
+				description: z.string().optional().describe("Any details about the adventure so far at this place"),
+			} as const,
 			outputSchema: {},
 			getStructuredContent: async () => ({}),
 		}),
@@ -236,13 +240,13 @@ export async function registerWidgets(server: McpServer) {
 				outputSchema: widget.outputSchema,
 				annotations: { readOnlyHint: true, openWorldHint: false },
 			},
-			async (args: Parameters<typeof widget.getStructuredContent>[0]) => {
+			async (args: any, _extra?: any) => {
 				const structuredContent = widget.getStructuredContent
-					? await widget.getStructuredContent(args)
+					? await widget.getStructuredContent(args as any)
 					: {};
 				return {
 					content: [
-						{ type: "text", text: widget.resultMessage },
+						{ type: "text" as const, text: widget.resultMessage },
 						createUIResource({
 							...resourceInfo,
 							uiMetadata: {
@@ -254,7 +258,7 @@ export async function registerWidgets(server: McpServer) {
 						}),
 					],
 					structuredContent,
-				};
+				} as any;
 			},
 		);
 	}

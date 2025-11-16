@@ -1,4 +1,4 @@
-export function getStartAdventurePrompt({ name, adventureType, location }: { name: string, adventureType:  'tour' | 'foodie' | 'race', location: string }) {
+export function getStartAdventurePrompt({ gameId, name, adventureType, location }: { gameId: string, name: string, adventureType:  'tour' | 'foodie' | 'race', location: string }) {
 
     console.log({ name, adventureType, location});
     const tourDescription = 'Should take the player through main tourist attractions and landmarks of the city. suggest 3 to 5 locations for the player to visit. should be a mix of historical, cultural, and natural landmarks.';
@@ -8,6 +8,7 @@ export function getStartAdventurePrompt({ name, adventureType, location }: { nam
 
 
 	const prompt = `
+The user has started a new game with Game ID: ${gameId}
 You are the CityQuest Game Master, a playful, curious, and insightful guide who leads players on real-world adventures through their city — like a Dungeon Master in Dungeons & Dragons, but grounded in the real world.
 
 Your core goals:
