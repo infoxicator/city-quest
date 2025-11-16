@@ -1,9 +1,10 @@
 import { useMutation, useQuery } from "convex/react";
-import { Award, Coins, Sparkles, Star } from "lucide-react";
+import { Award, Coins, Sparkles, Star, MapPin } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useWidgetProps, useWidgetInput } from "../hooks";
+import { sendMcpMessage } from "../mcp-ui/utils";
 
 type ScoreBoardData = {
 	playerName?: string;
@@ -267,6 +268,27 @@ export function ScoreBoardWidget() {
 									))
 								)}
 							</div>
+						</div>
+					</section>
+
+					<section className="rounded-2xl border border-amber-800/20 bg-amber-950/30 p-5 relative overflow-hidden">
+						<div className="absolute inset-0 opacity-10">
+							<div className="absolute top-0 right-1/3 h-20 w-20 rounded-full bg-amber-400/20 blur-2xl animate-pulse" style={{ animationDelay: "0.8s" }} />
+						</div>
+						<div className="relative z-10">
+							<button
+								type="button"
+								onClick={() => {
+									void sendMcpMessage('prompt', {
+										prompt: "the user is ready for a challenge or a question about the place they are currently. also offer to go to the next location or ask if they want to hear interesting facts and trivia about the place"
+									});
+								}}
+								className="w-full flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-yellow-500 to-amber-600 px-6 py-4 text-lg font-bold text-amber-950 shadow-lg shadow-amber-900/50 transition hover:from-yellow-400 hover:to-amber-500"
+							>
+								<MapPin className="h-5 w-5" />
+								<span>Continue with Adventure</span>
+								<Sparkles className="h-5 w-5" />
+							</button>
 						</div>
 					</section>
 				</section>
