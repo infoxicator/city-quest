@@ -1,4 +1,4 @@
-import { mutation } from './_generated/server'
+import { mutation, query } from './_generated/server'
 
 import { v } from 'convex/values'
 
@@ -13,6 +13,34 @@ const ADVENTURE_FLAVORS: Record<AdventureType, string> = {
     'Track the ember-lit food stalls of Spice Harbor, tasting enchanted dishes to learn their stories and unlock hidden routes.',
   race:
     'Sprint through the Windspindle circuits, a maze of rooftop raceways where griffin-mounted couriers test your reflexes.',
+}
+
+export const ADVENTURE_BADGES: Record<AdventureType, string[]> = {
+  tour: [
+    'Skyline Scout',
+    'Bridge Walker',
+    'Atrium Explorer',
+    'Crystal Navigator',
+    'Skyhollow Master',
+  ],
+  foodie: [
+    'Spice Taster',
+    'Stall Hunter',
+    'Flavor Seeker',
+    'Harbor Gourmet',
+    'Culinary Legend',
+  ],
+  race: [
+    'Wind Runner',
+    'Circuit Racer',
+    'Griffin Rider',
+    'Speed Demon',
+    'Champion Courier',
+  ],
+}
+
+export function getAvailableBadges(adventureType: AdventureType): string[] {
+  return ADVENTURE_BADGES[adventureType] || []
 }
 
 export const createGame = mutation({
@@ -80,6 +108,114 @@ export const addPicture = mutation({
     })
 
     return pictureId
+  },
+})
+
+export const getPlayerProgress = query({
+  args: {
+    gameId: v.id('games'),
+  },
+  handler: async (ctx, args) => {
+    const progress = await ctx.db
+      .query('playerProgress')
+      .withIndex('gameId', (q) => q.eq('gameId', args.gameId))
+      .first()
+
+    const game = await ctx.db.get(args.gameId)
+    if (!game) {
+      throw new Error('Game not found')
+    }
+
+    if (!progress) {
+      return {
+        level: 0,
+        gold: 0,
+        badges: [],
+        adventureType: game.adventureType,
+        playerName: game.playerName,
+      }
+    }
+
+    return {
+      level: progress.level,
+      gold: progress.gold,
+      badges: progress.badges,
+      adventureType: progress.adventureType,
+      playerName: game.playerName,
+    }
+  },
+})
+
+export const updatePlayerProgress = mutation({
+  args: {
+    gameId: v.id('games'),
+    level: v.optional(v.number()),
+    gold: v.optional(v.number()),
+    badge: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db.get(args.gameId)
+    if (!game) {
+      throw new Error('Game not found')
+    }
+
+    const adventureType = game.adventureType as AdventureType
+    const availableBadges = getAvailableBadges(adventureType)
+
+    if (args.badge && !availableBadges.includes(args.badge)) {
+      throw new Error(
+        `Invalid badge "${args.badge}" for adventure type "${adventureType}". Available badges: ${availableBadges.join(', ')}`,
+      )
+    }
+
+    let progress = await ctx.db
+      .query('playerProgress')
+      .withIndex('gameId', (q) => q.eq('gameId', args.gameId))
+      .first()
+
+    const now = Date.now()
+
+    if (!progress) {
+      const progressId = await ctx.db.insert('playerProgress', {
+        gameId: args.gameId,
+        level: args.level ?? 0,
+        gold: args.gold ?? 0,
+        badges: args.badge ? [args.badge] : [],
+        adventureType,
+        updatedAt: now,
+      })
+      progress = await ctx.db.get(progressId)
+    } else {
+      const newLevel = args.level !== undefined ? progress.level + args.level : progress.level
+      const newGold = args.gold !== undefined ? progress.gold + args.gold : progress.gold
+      const newBadges = args.badge
+        ? progress.badges.includes(args.badge)
+          ? progress.badges
+          : [...progress.badges, args.badge]
+        : progress.badges
+
+      await ctx.db.patch(progress._id, {
+        level: newLevel,
+        gold: newGold,
+        badges: newBadges,
+        updatedAt: now,
+      })
+
+      progress = await ctx.db.get(progress._id)
+    }
+
+    if (!progress) {
+      throw new Error('Failed to create or update progress')
+    }
+
+    const updatedGame = await ctx.db.get(args.gameId)
+    return {
+      level: progress.level,
+      gold: progress.gold,
+      badges: progress.badges,
+      adventureType: progress.adventureType,
+      playerName: updatedGame?.playerName || '',
+    }
   },
 })
 
