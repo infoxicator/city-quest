@@ -9,7 +9,7 @@ import {
 	useState,
 } from "react";
 
-import { initMcpUi } from "../mcp-ui/utils";
+import { initMcpUi, sendMcpMessage } from "../mcp-ui/utils";
 
 import { cn } from "../lib/utils";
 import { api } from "../../convex/_generated/api";
@@ -168,6 +168,11 @@ export function TakePictureWidget() {
 					description,
 				});
 			}
+
+			// Send MCP message to update score after quest completion
+			void sendMcpMessage('prompt', {
+				prompt: "the user has completed the quest, use the update-score tool to give them some gold and increment their level by 1."
+			});
 
 			// Show success state and clear everything
 			setRewardClaimed(true);
