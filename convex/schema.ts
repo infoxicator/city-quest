@@ -32,4 +32,16 @@ export default defineSchema({
     description: v.optional(v.string()),
     createdAt: v.number(),
   }).index('gameId', ['gameId']),
+  playerProgress: defineTable({
+    gameId: v.id('games'),
+    level: v.number(),
+    gold: v.number(),
+    badges: v.array(v.string()),
+    adventureType: v.union(
+      v.literal('tour'),
+      v.literal('foodie'),
+      v.literal('race'),
+    ),
+    updatedAt: v.number(),
+  }).index('gameId', ['gameId']),
 })
