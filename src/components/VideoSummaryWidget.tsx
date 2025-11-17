@@ -6,7 +6,7 @@ import { useWidgetInput } from "../hooks/use-widget-input";
 import { useOpenExternal } from "../hooks/use-open-external";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { Play, Sparkles } from "lucide-react";
+import { Play, Video } from "lucide-react";
 
 function getBaseUrl(): string {
 	if (import.meta.env.DEV) {
@@ -333,26 +333,28 @@ export function VideoSummaryWidget() {
 		    : "Share ready // streaming now";
 
 	return (
-		<div className="min-h-screen w-full bg-gradient-to-b from-slate-950 via-zinc-950 to-amber-950 px-4 py-10 text-white">
-			<header className="mx-auto mb-8 max-w-4xl text-center">
-				<p className="text-xs uppercase tracking-[0.35em] text-amber-200/70">
-					CityQuest // Story Dispatch
-				</p>
-				<h1 className="mt-2 text-3xl font-semibold">
-					Cinematic Mission Debrief
-				</h1>
-				<p className="mx-auto mt-2 max-w-xl text-sm text-amber-100/70">
-					We are packaging onboarding saga for the guild archive.
-					Once the relay responds, the stream will materialize below.
-				</p>
-			</header>
-			<div className="relative mx-auto w-full max-w-4xl">
+		<div className="min-h-[calc(100vh-5rem)] bg-gradient-to-b from-purple-950 via-amber-950 to-stone-950 py-12 text-white">
+			<div className="mx-auto flex w-full max-w-4xl justify-center px-6">
+				<section className="w-full max-w-2xl space-y-6 rounded-3xl border border-amber-800/20 bg-amber-950/20 p-8 shadow-2xl backdrop-blur">
+					<header className="text-center">
+						<p className="text-xs uppercase tracking-[0.35em] text-amber-200/70">
+							CityQuest // Story Dispatch
+						</p>
+						<h1 className="mt-2 text-3xl font-semibold">
+							Cinematic Mission Debrief
+						</h1>
+						<p className="mx-auto mt-2 max-w-xl text-sm text-amber-100/70">
+							We are packaging onboarding saga for the guild archive.
+							Once the relay responds, the stream will materialize below.
+						</p>
+					</header>
+					<div className="relative w-full">
 				{loaderData && loaderData.status === "success" ? (
 					<div className="flex flex-col items-center justify-center gap-6 py-20">
 						<div className="relative">
 							<div className="absolute inset-0 bg-amber-400/20 rounded-full blur-2xl animate-pulse" />
 							<div className="relative flex items-center justify-center w-32 h-32 rounded-full border-2 border-amber-400/50 bg-gradient-to-br from-amber-500/20 to-amber-600/10 backdrop-blur-sm">
-								<Sparkles className="w-16 h-16 text-amber-300 animate-pulse" />
+								<Video className="w-16 h-16 text-amber-300 animate-pulse" />
 							</div>
 						</div>
 						<button
@@ -416,10 +418,12 @@ export function VideoSummaryWidget() {
 						)}
 					</div>
 				)}
-				<div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-between px-6 py-4 text-xs uppercase tracking-[0.2em] text-white/50">
-					<span>Status</span>
-					<span>{statusMessage}</span>
-				</div>
+						<div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-between px-6 py-4 text-xs uppercase tracking-[0.2em] text-white/50">
+							<span>Status</span>
+							<span>{statusMessage}</span>
+						</div>
+					</div>
+				</section>
 			</div>
 		</div>
 	);

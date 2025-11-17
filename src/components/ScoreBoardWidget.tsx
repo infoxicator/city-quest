@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "convex/react";
-import { Award, Coins, Sparkles, Star, MapPin } from "lucide-react";
+import { Award, Coins, Sparkles, Star } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -283,11 +283,10 @@ export function ScoreBoardWidget() {
 										prompt: "the user is ready for a challenge or a question about the place they are currently. also offer to go to the next location or ask if they want to hear interesting facts and trivia about the place"
 									});
 								}}
-								className="w-full flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-yellow-500 to-amber-600 px-6 py-4 text-lg font-bold text-amber-950 shadow-lg shadow-amber-900/50 transition hover:from-yellow-400 hover:to-amber-500"
+								className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-600 px-6 py-4 text-lg font-bold text-amber-950 shadow-lg shadow-amber-900/50 transition hover:from-amber-400 hover:to-yellow-500"
 							>
-								<MapPin className="h-5 w-5" />
-								<span>Continue with Adventure</span>
 								<Sparkles className="h-5 w-5" />
+								<span>Continue with Adventure</span>
 							</button>
 						</div>
 					</section>
