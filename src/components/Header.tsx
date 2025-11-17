@@ -19,7 +19,7 @@ export default function Header() {
     select: (state) => state.location.pathname,
   })
 
-  if (pathname === '/greeting') {
+  if (pathname === '/greeting' || pathname === '/') {
     return null
   }
 
