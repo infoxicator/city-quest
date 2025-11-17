@@ -26,55 +26,6 @@ const createTakePictureWidgetHtml = (baseUrl: string) => `<link rel="stylesheet"
 <script type="module" src="${baseUrl}widgets/take-picture.js"></script>
 `;
 
-const VIDEO_SUMMARY_RESOURCE_ORIGIN = new URL(
-	"https://city-quest-video-gen.vercel.app",
-).origin;
-const VIDEO_SUMMARY_API_ORIGIN = new URL(
-	"https://imageplustexttoimage.mcp-ui-flows-nanobanana.workers.dev",
-).origin;
-
-function clampToPercentage(value?: number | null) {
-	if (typeof value !== "number" || Number.isNaN(value)) {
-		return undefined;
-	}
-	return Math.min(100, Math.max(0, value));
-}
-
-function getVideoEmbedUrl(url?: string | null) {
-	if (!url) {
-		return null;
-	}
-	try {
-		const parsed = new URL(url);
-		const host = parsed.hostname.replace(/^www\./, "");
-		if (host.endsWith("youtube.com")) {
-			const videoId = parsed.searchParams.get("v");
-			if (videoId) {
-				return `https://www.youtube.com/embed/${videoId}`;
-			}
-			const pathId = parsed.pathname.split("/").filter(Boolean).pop();
-			if (pathId) {
-				return `https://www.youtube.com/embed/${pathId}`;
-			}
-		}
-		if (host === "youtu.be") {
-			const id = parsed.pathname.replace("/", "");
-			if (id) {
-				return `https://www.youtube.com/embed/${id}`;
-			}
-		}
-		if (host.endsWith("vimeo.com")) {
-			const vimeoId = parsed.pathname.split("/").filter(Boolean).pop();
-			if (vimeoId) {
-				return `https://player.vimeo.com/video/${vimeoId}`;
-			}
-		}
-		return url;
-	} catch (error) {
-		console.debug("Unable to build embed url", error);
-		return url;
-	}
-}
 
 type WidgetOutput<Input extends ZodRawShape, Output extends ZodRawShape> = {
 	inputSchema: Input;
@@ -125,7 +76,7 @@ export async function registerWidgets(server: McpServer) {
 				"Launch the CityQuest onboarding console to register a hero and begin a new mission.",
 			invokingMessage: `Starting your CityQuest adventure...`,
 			invokedMessage: `CityQuest adventure started. The game master is ready to guide you on your adventure.`,
-			resultMessage: "Your CityQuest adventure has started. Give me your name and snap a picture for your avatar. Select your adventure type and tap start and the game master will guide you",
+			resultMessage: "Your CityQuest adventure has started. Provide your name and your adventure type in the widget above and tap Start Adventure",
 			widgetAccessible: true,
 			resultCanProduceWidget: true,
 			getHtml: () => Promise.resolve(createAdventureWidgetHtml(baseUrl)),
@@ -183,7 +134,7 @@ export async function registerWidgets(server: McpServer) {
 				"After arriving at your location, take a picture or a selfie for your CityQuest adventure to claim a reward",
 			invokingMessage: `Preparing camera interface...`,
 			invokedMessage: `Camera ready.`,
-			resultMessage: "The picture widget is ready. Capture or upload an image to continue.",
+			resultMessage: "The picture widget is ready. Capture or upload an image to claim your reward. Wait for the player to claim their reward before continuing.",
 			widgetAccessible: true,
 			resultCanProduceWidget: true,
 			getHtml: () => Promise.resolve(createTakePictureWidgetHtml(baseUrl)),

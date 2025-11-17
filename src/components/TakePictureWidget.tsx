@@ -25,14 +25,12 @@ type SelectedImage = {
 export function TakePictureWidget() {
 	const [isDragging, setIsDragging] = useState(false);
 	const [errorMessage, setErrorMessage] = useState("");
-	const [manualGameId, setManualGameId] = useState("");
 	const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
 	const [isClaiming, setIsClaiming] = useState(false);
 	const [rewardClaimed, setRewardClaimed] = useState(false);
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const imageInputId = useId();
-	const gameIdInputId = useId();
 
 	const addPicture = useMutation(api.games.addPicture);
 
@@ -49,10 +47,6 @@ export function TakePictureWidget() {
 	}, []);
 
 	const getGameId = useCallback(() => {
-		// Check manual input first (for testing)
-		if (manualGameId.trim()) {
-			return manualGameId.trim();
-		}
 		if (typeof window === 'undefined') {
 			return null;
 		}
@@ -69,7 +63,7 @@ export function TakePictureWidget() {
 		}
 		// Fallback to localStorage
 		return localStorage.getItem('cityQuestGameId');
-	}, [manualGameId, getToolInput]);
+	}, [getToolInput]);
 
 	const handleFileSelection = useCallback(
 		async (file?: File | null) => {
@@ -177,7 +171,6 @@ export function TakePictureWidget() {
 			// Show success state and clear everything
 			setRewardClaimed(true);
 			setSelectedImages([]);
-			setManualGameId("");
 			setErrorMessage("");
 		} catch (error) {
 			console.error('Error claiming reward:', error);
@@ -266,23 +259,6 @@ export function TakePictureWidget() {
 						</div>
 					) : (
 						<div className="space-y-3">
-							<div className="space-y-2">
-								<label
-									className="text-sm font-medium text-amber-100"
-									htmlFor={gameIdInputId}
-								>
-									Game ID (for testing)
-								</label>
-								<input
-									id={gameIdInputId}
-									type="text"
-									value={manualGameId}
-									onChange={(e) => setManualGameId(e.target.value)}
-									placeholder="Enter game ID or leave empty to use URL/localStorage"
-									className="w-full rounded-2xl border border-amber-700/30 bg-amber-950/20 px-4 py-3 text-base text-white placeholder:text-amber-200/60 focus:border-amber-400 focus:outline-none"
-								/>
-							</div>
-
 							{selectedImages.length > 0 && (
 							<div className="space-y-3">
 								<div className="space-y-2">

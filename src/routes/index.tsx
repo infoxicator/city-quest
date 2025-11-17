@@ -62,6 +62,24 @@ function LandingPage() {
 				</div>
 			</section>
 
+			{/* Demo Section */}
+			<section className="py-16 px-6 max-w-4xl mx-auto">
+				<div className="rounded-3xl border border-amber-700/30 bg-amber-950/20 p-8 sm:p-10 shadow-2xl backdrop-blur">
+					<h2 className="text-3xl sm:text-4xl font-bold text-center mb-8 text-white">
+						Demo
+					</h2>
+					<div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+						<iframe
+							className="absolute top-0 left-0 w-full h-full rounded-lg"
+							src="https://www.youtube.com/embed/MJ5RtWxOiZc"
+							title="CityQuest Video"
+							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+							allowFullScreen
+						/>
+					</div>
+				</div>
+			</section>
+
 			{/* ChatGPT Connection Guide */}
 			<section className="py-16 px-6 max-w-4xl mx-auto">
 				<div className="rounded-3xl border border-amber-700/30 bg-amber-950/20 p-8 sm:p-10 shadow-2xl backdrop-blur">

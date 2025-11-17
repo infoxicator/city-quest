@@ -51,7 +51,7 @@ interface EndSlideProps {
   title?: string;
   theme: VideoThemeSettings;
 }
-export const EndSlide: React.FC<EndSlideProps> = ({ callToAction, theme }) => {
+export const EndSlide: React.FC<EndSlideProps> = ({ callToAction, title, theme }) => {
   const frame = useCurrentFrame();
   const videoConfig = useVideoConfig();
   
@@ -99,7 +99,7 @@ export const EndSlide: React.FC<EndSlideProps> = ({ callToAction, theme }) => {
           color: theme.end.subtitleColor,
         }}
       >
-        https://tbpn-video-generator.vercel.app/
+        https://city-quest.netlify.app
       </span>
       <div
         style={{
@@ -110,6 +110,24 @@ export const EndSlide: React.FC<EndSlideProps> = ({ callToAction, theme }) => {
         }}
       />
       </div>
+      
+      {/* Title text */}
+      {title && (
+        <h2
+          style={{
+            fontFamily: 'SF Pro Text, Helvetica, Arial',
+            fontWeight: '600',
+            fontSize: 48,
+            textAlign: 'center',
+            width: '100%',
+            margin: 0,
+            color: theme.end.textColor,
+            marginBottom: 40,
+          }}
+        >
+          {title}
+        </h2>
+      )}
       
       {/* Animated call to action text */}
       <h1
