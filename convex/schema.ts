@@ -44,4 +44,17 @@ export default defineSchema({
     ),
     updatedAt: v.number(),
   }).index('gameId', ['gameId']),
+  stories: defineTable({
+    gameId: v.id('games'),
+    title: v.string(),
+    date: v.string(),
+    mainImage: v.optional(v.string()),
+    slides: v.array(
+      v.object({
+        image: v.string(),
+        text: v.string(),
+      }),
+    ),
+    createdAt: v.number(),
+  }).index('gameId', ['gameId']),
 })

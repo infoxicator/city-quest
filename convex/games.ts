@@ -146,6 +146,119 @@ export const getPlayerProgress = query({
   },
 })
 
+export const getGame = query({
+  args: {
+    gameId: v.id('games'),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db.get(args.gameId)
+    if (!game) {
+      return null
+    }
+
+    return {
+      playerName: game.playerName,
+      adventureType: game.adventureType,
+      characterCardUrl: game.characterCardUrl,
+    }
+  },
+})
+
+export const getPictures = query({
+  args: {
+    gameId: v.id('games'),
+  },
+  handler: async (ctx, args) => {
+    const pictures = await ctx.db
+      .query('pictures')
+      .withIndex('gameId', (q) => q.eq('gameId', args.gameId))
+      .collect()
+
+    return pictures.map((pic) => ({
+      imageUrl: pic.imageUrl,
+      location: pic.location,
+      description: pic.description,
+      createdAt: pic.createdAt,
+    }))
+  },
+})
+
+export const createStory = mutation({
+  args: {
+    gameId: v.id('games'),
+    title: v.string(),
+    date: v.string(),
+    mainImage: v.optional(v.string()),
+    slides: v.array(
+      v.object({
+        image: v.string(),
+        text: v.string(),
+      }),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const storyId = await ctx.db.insert('stories', {
+      gameId: args.gameId,
+      title: args.title,
+      date: args.date,
+      mainImage: args.mainImage,
+      slides: args.slides,
+      createdAt: Date.now(),
+    })
+
+    return storyId
+  },
+})
+
+export const getStory = query({
+  args: {
+    storyId: v.id('stories'),
+  },
+  handler: async (ctx, args) => {
+    const story = await ctx.db.get(args.storyId)
+    if (!story) {
+      return null
+    }
+
+    return {
+      id: story._id,
+      gameId: story.gameId,
+      title: story.title,
+      date: story.date,
+      mainImage: story.mainImage,
+      slides: story.slides,
+      createdAt: story.createdAt,
+    }
+  },
+})
+
+export const getStoryByGameId = query({
+  args: {
+    gameId: v.id('games'),
+  },
+  handler: async (ctx, args) => {
+    const story = await ctx.db
+      .query('stories')
+      .withIndex('gameId', (q) => q.eq('gameId', args.gameId))
+      .order('desc')
+      .first()
+
+    if (!story) {
+      return null
+    }
+
+    return {
+      id: story._id,
+      gameId: story.gameId,
+      title: story.title,
+      date: story.date,
+      mainImage: story.mainImage,
+      slides: story.slides,
+      createdAt: story.createdAt,
+    }
+  },
+})
+
 export const updatePlayerProgress = mutation({
   args: {
     gameId: v.id('games'),
