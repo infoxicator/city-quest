@@ -96,7 +96,7 @@ export const StorySlides: React.FC<StorySlidesProps> = ({ storyData }) => {
 
       <Sequence from={durationInFrames - endDuration} durationInFrames={endDuration}>
         <EndSlide
-          callToAction={"Share With your Friends!"}
+          callToAction={"Share With your Friends  !"}
           title="Thanks for Playing!"
           theme={theme}
         />

@@ -9,6 +9,7 @@ import {
 	useState,
 } from "react";
 
+import { useWidgetInput } from "../hooks";
 import { initMcpUi, sendMcpMessage } from "../mcp-ui/utils";
 
 import { cn } from "../lib/utils";
@@ -34,16 +35,14 @@ export function TakePictureWidget() {
 
 	const addPicture = useMutation(api.games.addPicture);
 
+	const toolInput = useWidgetInput<{
+		gameId?: string;
+		location?: string;
+		description?: string;
+	}>();
+
 	useEffect(() => {
 		initMcpUi();
-	}, []);
-
-	const getToolInput = useCallback(() => {
-		if (typeof window === 'undefined') {
-			return null;
-		}
-		const win = window as any;
-		return win.__MCP_UI_INITIAL_RENDER_DATA__?.toolInput || win.openai?.toolInput || null;
 	}, []);
 
 	const getGameId = useCallback(() => {
@@ -51,7 +50,6 @@ export function TakePictureWidget() {
 			return null;
 		}
 		// Check widget toolInput (from MCP widget args)
-		const toolInput = getToolInput();
 		if (toolInput?.gameId) {
 			return toolInput.gameId;
 		}
@@ -63,7 +61,7 @@ export function TakePictureWidget() {
 		}
 		// Fallback to localStorage
 		return localStorage.getItem('cityQuestGameId');
-	}, [getToolInput]);
+	}, [toolInput?.gameId]);
 
 	const handleFileSelection = useCallback(
 		async (file?: File | null) => {
@@ -78,8 +76,8 @@ export function TakePictureWidget() {
 				setErrorMessage("Please choose an image smaller than 2 MB.");
 				return;
 			}
-			if (selectedImages.length >= 3) {
-				setErrorMessage("Maximum of 3 images allowed.");
+			if (selectedImages.length >= 1) {
+				setErrorMessage("Maximum of 1 image allowed.");
 				return;
 			}
 			setErrorMessage("");
@@ -118,7 +116,6 @@ export function TakePictureWidget() {
 
 		try {
 			// Get location and description from toolInput
-			const toolInput = getToolInput();
 			const location = toolInput?.location;
 			const description = toolInput?.description;
 			console.log('city-quest-log:take-picture', {location, description});
@@ -165,7 +162,7 @@ export function TakePictureWidget() {
 
 			// Send MCP message to update score after quest completion
 			void sendMcpMessage('prompt', {
-				prompt: "the user has completed the quest, use the update-score tool to give them some gold and increment their level by 1."
+				prompt: "the user has completed the quest, use the update-score tool to give them some gold and increment their level"
 			});
 
 			// Show success state and clear everything
@@ -182,7 +179,7 @@ export function TakePictureWidget() {
 		} finally {
 			setIsClaiming(false);
 		}
-	}, [selectedImages, getGameId, getToolInput, addPicture]);
+	}, [selectedImages, getGameId, toolInput, addPicture]);
 
 	const handleDrop = useCallback(
 		(event: DragEvent<HTMLElement>) => {
@@ -204,7 +201,7 @@ export function TakePictureWidget() {
 			if (!files) return;
 			const imageFiles = Array.from(files)
 				.filter((file) => file.type.startsWith("image/"))
-				.slice(0, 3 - selectedImages.length); // Only process up to the limit
+				.slice(0, 1 - selectedImages.length); // Only process up to the limit
 			for (const file of imageFiles) {
 				void handleFileSelection(file);
 			}
@@ -234,7 +231,7 @@ export function TakePictureWidget() {
 								Snap a selfie at the location to unlock your reward! 📸
 							</p>
 							<p className="text-sm text-amber-300/80">
-								Take up to 3 pictures to document your adventure
+								Take a picture to document your adventure
 							</p>
 						</div>
 					</div>
@@ -263,9 +260,9 @@ export function TakePictureWidget() {
 							<div className="space-y-3">
 								<div className="space-y-2">
 									<p className="text-sm font-medium text-amber-100">
-										Selected Pictures ({selectedImages.length}/3)
+										Selected Picture
 									</p>
-									<div className="grid grid-cols-3 gap-3">
+									<div className="grid grid-cols-1 gap-3">
 										{selectedImages.map((img, index) => (
 											<div
 												key={index}
@@ -316,7 +313,7 @@ export function TakePictureWidget() {
 							</div>
 						)}
 
-						{!isClaiming && selectedImages.length < 3 && (
+						{!isClaiming && selectedImages.length < 1 && (
 							<button
 								type="button"
 								onDragOver={(event) => {
@@ -339,7 +336,7 @@ export function TakePictureWidget() {
 										📸 Snap Your Selfie
 									</p>
 									<p className="text-xs text-amber-200/80">
-										Tap to capture or drag & drop ({selectedImages.length}/3)
+										Tap to capture or drag & drop
 									</p>
 								</div>
 								<input
