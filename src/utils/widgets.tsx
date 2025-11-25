@@ -7,11 +7,13 @@ import { BUILD_TIMESTAMP } from "./build-timestamp.ts";
 const version = BUILD_TIMESTAMP;
 
 const createAdventureWidgetHtml = (baseUrl: string) => `<link rel="stylesheet" href="${baseUrl}/widgets/greeting.css">
+<link rel="stylesheet" href="${baseUrl}/widgets/styles.css">
 <div id="tanstack-app-root"></div>
 <script type="module" src="${baseUrl}widgets/greeting.js"></script>
 `;
 
 const createScoreBoardWidgetHtml = (baseUrl: string) => `<link rel="stylesheet" href="${baseUrl}/widgets/greeting.css">
+<link rel="stylesheet" href="${baseUrl}/widgets/styles.css">
 <div id="tanstack-app-root"></div>
 <script type="module" src="${baseUrl}widgets/scoreboard.js"></script>
 `;
@@ -98,9 +100,10 @@ export async function registerWidgets(server: McpServer) {
 			inputSchema: {
 				gameId: z.string().describe("The game ID to update progress for. Required."),
 				adventureType: z.enum(['tour', 'foodie', 'race']).describe("The adventure type. Required to validate badges."),
+				mode: z.enum(['default', 'kitze']).optional().describe("The display mode for the scoreboard. Use 'kitze' for the Junk Food Bingo mode."),
 				level: z.number().optional().describe("Amount to increment level by (typically 1 per quest completion). If not provided, level remains unchanged."),
 				gold: z.number().optional().describe("Amount of gold to add to the player's total. Determined by question difficulty. If not provided, gold remains unchanged."),
-				badge: z.string().optional().describe("Badge name to award. Must be one of: Tour: Skyline Scout, Bridge Walker, Atrium Explorer, Crystal Navigator, Skyhollow Master; Foodie: Spice Taster, Stall Hunter, Flavor Seeker, Harbor Gourmet, Culinary Legend; Race: Wind Runner, Circuit Racer, Griffin Rider, Speed Demon, Champion Courier."),
+				badge: z.string().optional().describe("Badge name to award. Must be one of: Tour: Skyline Scout, Bridge Walker, Atrium Explorer, Crystal Navigator, Skyhollow Master; Foodie: Spice Taster, Stall Hunter, Flavor Seeker, Harbor Gourmet, Culinary Legend; Race: Wind Runner, Circuit Racer, Griffin Rider, Speed Demon, Champion Courier. For 'kitze' mode, use the restaurant name (e.g. Wendy's, Shake Shack)."),
 			} as const,
 			outputSchema: {},
 			getStructuredContent: async () => ({}),

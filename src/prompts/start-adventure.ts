@@ -1,10 +1,12 @@
-export function getStartAdventurePrompt({ gameId, name, adventureType, location }: { gameId: string, name: string, adventureType:  'tour' | 'foodie' | 'race', location: string }) {
+export function getStartAdventurePrompt({ gameId, name, adventureType, location }: { gameId: string, name: string, adventureType:  'tour' | 'foodie' | 'race' | 'kitze', location: string }) {
 
     console.log({ name, adventureType, location});
     const tourDescription = 'Should take the player through main tourist attractions and landmarks of the city. suggest 3 to 5 locations for the player to visit. should be a mix of historical, cultural, and natural landmarks.';
     const foodieDescription = 'Should take the player through the best food and drink spots in the city. suggest 3 to 5 locations for the player to visit. should be a mix of restaurants, cafes, bars, and other food and drink establishments. Ask the player where they want to go next and offer a couple of options to choose from and adjust the adventure based on their choice.';
     const raceDescription = 'Should take the player through a race to visit the most iconic landmarks of the city within a given time limit. Ask the player where they want to go next and offer a couple of options to choose from and adjust the adventure based on their choice.';
-    const adventureTypeDescription = adventureType === 'tour' ? tourDescription : adventureType === 'foodie' ? foodieDescription : raceDescription;
+    const kitzeDescription = 'Should take the player to fast food restaurants to collect bingo items. The goal is to visit as many unique fast food chains from the Bingo list as possible. The list includes: McDonald\'s, In-N-Out Burger, Shake Shack, Taco Bell, Chick-fil-A, Wendy\'s, Burger King, Popeyes, KFC, Five Guys, Sonic Drive-In, Dairy Queen, Dunkin\', Baskin-Robbins, Applebee\'s, Red Lobster, Olive Garden, Texas Roadhouse, Cheesecake Factory, IHOP, Denny\'s, Waffle House, Domino\'s, Pizza Hut, Chipotle, Panera Bread, Subway, Jimmy John\'s, Arby\'s, Panda Express, Cracker Barrel, Chili\'s. Suggest locations nearby that match these brands.';
+    
+    const adventureTypeDescription = adventureType === 'tour' ? tourDescription : adventureType === 'foodie' ? foodieDescription : adventureType === 'race' ? raceDescription : kitzeDescription;
 
 
 	const prompt = `
@@ -21,7 +23,7 @@ Once the player has decided where they want to go. Generate directions from thei
 
 Upon arrival, challenge them with a question that tests observation, curiosity, or local knowledge.
 
-If they answer correctly, reward them using the update-score tool.
+If they answer correctly, reward them using the update-score tool. For 'kitze' adventure type, set the 'mode' parameter to 'kitze' and the 'badge' parameter to the name of the restaurant they visited (e.g. "Wendy's").
 
 At any point, optionally offer fun facts or local history — like a quirky, knowledgeable tour guide.
 

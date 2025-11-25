@@ -5,19 +5,19 @@ import {
 	useCallback,
 	useEffect,
 	useId,
-	useMemo,
 	useRef,
 	useState,
 } from "react";
 
 import { getStartAdventurePrompt } from "../prompts/start-adventure";
+import { getStartAdventurePrompt as getStartAdventurePromptKitze } from "../prompts/start-adventure-kitze";
 
 import { initMcpUi, sendMcpMessage } from "../mcp-ui/utils";
 
 import { cn } from "../lib/utils";
 import { api } from "../../convex/_generated/api";
 
-type AdventureType = "tour" | "foodie" | "race";
+type AdventureType = "tour" | "foodie" | "race" | "kitze";
 
 const ADVENTURE_OPTIONS: Array<{
 	id: AdventureType;
@@ -43,33 +43,18 @@ const ADVENTURE_OPTIONS: Array<{
 		accent: "from-stone-600/40 to-amber-700/30 text-stone-950",
 		emoji: "🏁",
 	},
+	{
+		id: "kitze",
+		title: "Kitze's Junk Food Bingo",
+		accent: "from-red-500/40 to-blue-600/20 text-slate-950",
+		emoji: "🍔",
+	},
 ];
 
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
 
 const HERO_TITLES = ["Explorer", "Pathfinder", "Chronicle", "Navigator"];
 const HERO_SUFFIXES = ["Lumen", "Starling", "Wander", "Morrow", "Solstice"];
-
-const ATMOSPHERE_TILES = [
-	{
-		title: "Aurora Bazaar",
-		caption: "Lanterns hum over spice glass.",
-		hue: "from-amber-400/20 to-rose-500/10",
-		delay: "0s",
-	},
-	{
-		title: "Windspindle Run",
-		caption: "Golems chalk lap times in the mist.",
-		hue: "from-cyan-400/20 to-sky-500/10",
-		delay: "0.2s",
-	},
-	{
-		title: "Echo Library",
-		caption: "Holo-shelves whisper route hints.",
-		hue: "from-emerald-400/20 to-lime-500/10",
-		delay: "0.4s",
-	},
-];
 
 const generateHeroName = () => {
 	const title = HERO_TITLES[Math.floor(Math.random() * HERO_TITLES.length)];
@@ -181,10 +166,8 @@ export function GreetingWidget() {
 	const [selectedAdventure, setSelectedAdventure] =
 		useState<AdventureType>("tour");
 	const [location, setLocation] = useState("");
-	const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 	const [avatarFile, setAvatarFile] = useState<File | null>(null);
 	const [isDragging, setIsDragging] = useState(false);
-	const [story, setStory] = useState<string | null>(null);
 	const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">(
 		"idle",
 	);
@@ -242,20 +225,7 @@ export function GreetingWidget() {
 		(option) => option.id === selectedAdventure,
 	);
 
-	const previewCard = useMemo(
-		() => ({
-			title: `Welcome, ${displayName}!`,
-			subtitle: `${adventureDetails?.title ?? "CityQuest Path"} awaits.`,
-			signature: "CityQuest Dispatch",
-			accentColor: "#0f172a",
-			mood: "celebrate" as const,
-			inlineStyles: true,
-		}),
-		[adventureDetails?.title, displayName],
-	);
-
 	const resetStory = useCallback(() => {
-		setStory(null);
 		setStatus("idle");
 		setErrorMessage("");
 	}, []);
@@ -338,7 +308,6 @@ Match the card's existing typography and color style.`,
 			const reader = new FileReader();
 			reader.onload = () => {
 				if (typeof reader.result === "string") {
-					setAvatarPreview(reader.result);
 					resetStory();
 					void combineImages(file);
 				}
@@ -364,7 +333,6 @@ Match the card's existing typography and color style.`,
 		}
 		setStatus("saving");
 		setErrorMessage("");
-		setStory(null);
 		try {
 			const locationValue = location.trim() || "London";
 			console.log({displayName, selectedAdventure, location: locationValue});
@@ -382,7 +350,9 @@ Match the card's existing typography and color style.`,
 
 			// const response = await sendPrompt({ gameId });
 			//setStory(response?.prompt ?? null);
-			const prompt = getStartAdventurePrompt({ gameId, name: displayName, adventureType: selectedAdventure as 'tour' | 'foodie' | 'race', location: locationValue });
+			const prompt = selectedAdventure === 'kitze' 
+				? getStartAdventurePromptKitze({ gameId, name: displayName, adventureType: selectedAdventure, location: locationValue })
+				: getStartAdventurePrompt({ gameId, name: displayName, adventureType: selectedAdventure, location: locationValue });
 			console.log({prompt, gameId});
 			void sendMcpMessage('prompt', { prompt })
 			setStatus("success");
@@ -406,9 +376,13 @@ Match the card's existing typography and color style.`,
 	]);
 
 	return (
-		<div className="min-h-[calc(100vh-5rem)] bg-gradient-to-b from-purple-950 via-amber-950 to-stone-950 py-6 sm:py-12 text-white">
-			<div className="mx-auto flex w-full max-w-4xl justify-center px-4 sm:px-6">
-				<section className="w-full max-w-2xl space-y-6 rounded-3xl border border-amber-800/20 bg-amber-950/20 p-4 sm:p-6 md:p-8 shadow-2xl backdrop-blur">
+		<div className={`min-h-[calc(100vh-5rem)] py-6 sm:py-12 text-white ${
+			status === "success" && selectedAdventure === "kitze"
+				? "bg-gradient-to-b from-blue-800 via-red-600 via-blue-800 to-red-700 relative overflow-hidden"
+				: "bg-gradient-to-b from-purple-950 via-amber-950 to-stone-950"
+		}`}>
+			<div className={`mx-auto flex w-full ${status === "success" && selectedAdventure === "kitze" ? "max-w-6xl" : "max-w-4xl"} justify-center px-4 sm:px-6`}>
+				<section className={`w-full ${status === "success" && selectedAdventure === "kitze" ? "max-w-5xl" : "max-w-2xl"} space-y-6 rounded-3xl border border-amber-800/20 bg-amber-950/20 p-4 sm:p-6 md:p-8 shadow-2xl backdrop-blur`}>
 					<div className="relative overflow-hidden rounded-3xl border border-amber-700/30 bg-gradient-to-br from-amber-600/30 via-yellow-700/20 to-stone-800/90 p-4 sm:p-6 md:p-8 shadow-inner">
 						<div className="pointer-events-none absolute inset-0 opacity-60">
 							<div className="absolute -top-10 -right-6 h-40 w-40 rounded-full bg-amber-400/40 blur-3xl" />
@@ -483,7 +457,6 @@ Match the card's existing typography and color style.`,
 										type="button"
 										onClick={() => {
 											setCombinedImage(null);
-											setAvatarPreview(null);
 											setAvatarFile(null);
 											resetStory();
 										}}
@@ -535,7 +508,124 @@ Match the card's existing typography and color style.`,
 						</div>
 					</div>
 
-					{status === "success" ? (
+					{status === "success" && selectedAdventure === "kitze" ? (
+						<div className="space-y-3">
+							{/* Patriotic Background Layers */}
+							<div className="absolute inset-0 overflow-hidden">
+								{/* Fireworks in sky */}
+								<div className="absolute top-0 left-1/4 h-32 w-32 rounded-full bg-yellow-400/30 blur-3xl animate-pulse" />
+								<div className="absolute top-0 right-1/4 h-40 w-40 rounded-full bg-red-500/30 blur-3xl animate-pulse" style={{ animationDelay: "0.5s" }} />
+								<div className="absolute top-10 left-1/2 h-36 w-36 rounded-full bg-blue-500/30 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+								
+								{/* Flag stripes pattern */}
+								<div className="absolute inset-0 opacity-10">
+									{Array.from({ length: 13 }).map((_, i) => (
+										<div
+											key={i}
+											className={`absolute w-full h-[calc(100%/13)] ${i % 2 === 0 ? 'bg-red-600' : 'bg-white'}`}
+											style={{ top: `${(i * 100) / 13}%` }}
+										/>
+									))}
+								</div>
+								
+								{/* Stars pattern overlay */}
+								<div className="absolute top-0 left-0 w-1/3 h-1/3 bg-blue-900/20" />
+								<div className="absolute top-0 left-0 w-1/3 h-1/3 opacity-30" style={{
+									backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`,
+									backgroundSize: '20px 20px',
+								}} />
+							</div>
+
+							{/* Main Content */}
+							<div className="relative z-10 space-y-6 py-8">
+								{/* Hero Message */}
+								<div className="text-center space-y-4 px-4 py-12 overflow-visible">
+									<h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)] animate-bounce break-words">
+										Ayyyy let's freakin' GOOOOOO 🇺🇸🍔🔥
+									</h2>
+									<div className="flex items-center justify-center gap-4 text-6xl animate-pulse">
+										<span>🇺🇸</span>
+										<span>🍔</span>
+										<span>🔥</span>
+									</div>
+								</div>
+
+								{/* Bingo Card */}
+								<div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border-4 border-red-600 p-6 sm:p-8">
+									<header className="mb-6 text-center">
+										<h3 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter uppercase flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+											<span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-800 drop-shadow-sm">USA</span>
+											<span className="bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-red-700 drop-shadow-sm">Junk Food</span>
+											<span className="text-slate-900">Bingo</span>
+										</h3>
+										<div className="h-2 w-full max-w-md mx-auto bg-slate-900 mt-2 -skew-x-12 relative -top-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"></div>
+									</header>
+
+									<div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 sm:gap-3">
+										{[
+											{ name: "McDonald's", icon: "🍔" },
+											{ name: "In-N-Out Burger", icon: "🌴" },
+											{ name: "Shake Shack", icon: "🍔" },
+											{ name: "Taco Bell", icon: "🌮" },
+											{ name: "Chick-fil-A", icon: "🐔" },
+											{ name: "Wendy's", icon: "👧" },
+											{ name: "Burger King", icon: "👑" },
+											{ name: "Popeyes", icon: "🍗" },
+											{ name: "KFC", icon: "👴" },
+											{ name: "Five Guys", icon: "🥜" },
+											{ name: "Sonic Drive-In", icon: "🛼" },
+											{ name: "Dairy Queen", icon: "🍦" },
+											{ name: "Dunkin'", icon: "🍩" },
+											{ name: "Baskin-Robbins", icon: "🍨" },
+											{ name: "Applebee's", icon: "🍎" },
+											{ name: "Red Lobster", icon: "🦞" },
+											{ name: "Olive Garden", icon: "🥖" },
+											{ name: "Texas Roadhouse", icon: "🥩" },
+											{ name: "Cheesecake Factory", icon: "🍰" },
+											{ name: "IHOP", icon: "🥞" },
+											{ name: "Denny's", icon: "🍳" },
+											{ name: "Waffle House", icon: "🧇" },
+											{ name: "Domino's", icon: "🍕" },
+											{ name: "Pizza Hut", icon: "🏠" },
+											{ name: "Chipotle", icon: "🌯" },
+											{ name: "Panera Bread", icon: "🥐" },
+											{ name: "Subway", icon: "🥪" },
+											{ name: "Jimmy John's", icon: "🥪" },
+											{ name: "Arby's", icon: "🍖" },
+											{ name: "Panda Express", icon: "🐼" },
+											{ name: "Cracker Barrel", icon: "🪵" },
+											{ name: "Chili's", icon: "🌶️" },
+										].map((item) => (
+											<div
+												key={item.name}
+												className="aspect-square rounded-xl p-1.5 sm:p-2 flex flex-col items-center justify-center gap-0.5 border-2 transition-all duration-300 relative overflow-hidden group bg-yellow-50 border-yellow-200 hover:border-yellow-300 hover:scale-105"
+											>
+												<span className="text-lg sm:text-xl drop-shadow-sm flex-shrink-0 leading-none">
+													{item.icon}
+												</span>
+												<span className="text-[7px] sm:text-[8px] md:text-[9px] font-bold text-center uppercase tracking-tighter leading-[1.1] text-slate-700 px-0.5 line-clamp-2">
+													{item.name}
+												</span>
+											</div>
+										))}
+									</div>
+
+									<div className="mt-6 text-center">
+										<p className="text-lg font-bold text-slate-700 uppercase tracking-wider">
+											0 / 32 Collected
+										</p>
+									</div>
+								</div>
+
+								{/* Decorative Elements */}
+								<div className="flex items-center justify-center gap-8 text-4xl sm:text-5xl">
+									<span className="animate-bounce" style={{ animationDelay: "0s" }}>🦅</span>
+									<span className="animate-bounce" style={{ animationDelay: "0.2s" }}>🇺🇸</span>
+									<span className="animate-bounce" style={{ animationDelay: "0.4s" }}>🍔</span>
+								</div>
+							</div>
+						</div>
+					) : status === "success" ? (
 						<div className="space-y-3">
 							<div className="rounded-3xl border-2 border-amber-400/60 bg-gradient-to-br from-amber-600/30 via-yellow-700/20 to-stone-800/90 p-6 text-center shadow-xl shadow-amber-600/40">
 								<div className="flex flex-col items-center gap-3">
@@ -557,7 +647,7 @@ Match the card's existing typography and color style.`,
 						</div>
 					) : (
 						<div className="space-y-3">
-							<div className="grid gap-4 md:grid-cols-3">
+							<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 								{ADVENTURE_OPTIONS.map((option) => {
 									const isActive = option.id === selectedAdventure;
 									return (

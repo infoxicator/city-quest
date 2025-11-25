@@ -4,7 +4,7 @@ import { v } from 'convex/values'
 
 import type { Doc, Id } from './_generated/dataModel'
 
-type AdventureType = 'tour' | 'foodie' | 'race'
+type AdventureType = 'tour' | 'foodie' | 'race' | 'kitze'
 
 const ADVENTURE_FLAVORS: Record<AdventureType, string> = {
   tour:
@@ -13,6 +13,8 @@ const ADVENTURE_FLAVORS: Record<AdventureType, string> = {
     'Track the ember-lit food stalls of Spice Harbor, tasting enchanted dishes to learn their stories and unlock hidden routes.',
   race:
     'Sprint through the Windspindle circuits, a maze of rooftop raceways where griffin-mounted couriers test your reflexes.',
+  kitze:
+    'Embark on the ultimate Junk Food Bingo. Can you collect them all?',
 }
 
 export const ADVENTURE_BADGES: Record<AdventureType, string[]> = {
@@ -37,6 +39,15 @@ export const ADVENTURE_BADGES: Record<AdventureType, string[]> = {
     'Speed Demon',
     'Champion Courier',
   ],
+  kitze: [
+    "McDonald's", "In-N-Out Burger", "Shake Shack", "Taco Bell", "Chick-fil-A",
+    "Wendy's", "Burger King", "Popeyes", "KFC", "Five Guys",
+    "Sonic Drive-In", "Dairy Queen", "Dunkin'", "Baskin-Robbins", "Applebee's",
+    "Red Lobster", "Olive Garden", "Texas Roadhouse", "Cheesecake Factory", "IHOP",
+    "Denny's", "Waffle House", "Domino's", "Pizza Hut", "Chipotle",
+    "Panera Bread", "Subway", "Jimmy John's", "Arby's", "Panda Express",
+    "Cracker Barrel", "Chili's"
+  ],
 }
 
 export function getAvailableBadges(adventureType: AdventureType): string[] {
@@ -50,6 +61,7 @@ export const createGame = mutation({
       v.literal('tour'),
       v.literal('foodie'),
       v.literal('race'),
+      v.literal('kitze'),
     ),
     avatarDataUrl: v.optional(v.string()),
     location: v.string(),

@@ -5,6 +5,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useWidgetProps, useWidgetInput } from "../hooks";
 import { sendMcpMessage } from "../mcp-ui/utils";
+import { cn } from "../lib/utils";
 
 type ScoreBoardData = {
 	playerName?: string;
@@ -22,12 +23,46 @@ const fallbackData: ScoreBoardData = {
 	updatedAt: new Date().toISOString(),
 };
 
+const KITZE_ITEMS = [
+	{ name: "McDonald's", icon: "🍔" },
+	{ name: "In-N-Out Burger", icon: "🌴" },
+	{ name: "Shake Shack", icon: "🍔" },
+	{ name: "Taco Bell", icon: "🌮" },
+	{ name: "Chick-fil-A", icon: "🐔" },
+	{ name: "Wendy's", icon: "👧" },
+	{ name: "Burger King", icon: "👑" },
+	{ name: "Popeyes", icon: "🍗" },
+	{ name: "KFC", icon: "👴" },
+	{ name: "Five Guys", icon: "🥜" },
+	{ name: "Sonic Drive-In", icon: "🛼" },
+	{ name: "Dairy Queen", icon: "🍦" },
+	{ name: "Dunkin'", icon: "🍩" },
+	{ name: "Baskin-Robbins", icon: "🍨" },
+	{ name: "Applebee's", icon: "🍎" },
+	{ name: "Red Lobster", icon: "🦞" },
+	{ name: "Olive Garden", icon: "🥖" },
+	{ name: "Texas Roadhouse", icon: "🥩" },
+	{ name: "Cheesecake Factory", icon: "🍰" },
+	{ name: "IHOP", icon: "🥞" },
+	{ name: "Denny's", icon: "🍳" },
+	{ name: "Waffle House", icon: "🧇" },
+	{ name: "Domino's", icon: "🍕" },
+	{ name: "Pizza Hut", icon: "🏠" },
+	{ name: "Chipotle", icon: "🌯" },
+	{ name: "Panera Bread", icon: "🥐" },
+	{ name: "Subway", icon: "🥪" },
+	{ name: "Jimmy John's", icon: "🥪" },
+	{ name: "Arby's", icon: "🍖" },
+	{ name: "Panda Express", icon: "🐼" },
+	{ name: "Cracker Barrel", icon: "🪵" },
+	{ name: "Chili's", icon: "🌶️" },
+];
 
 export function ScoreBoardWidget() {
 	const updateProgress = useMutation(api.games.updatePlayerProgress);
 	
 	// Get toolInput and toolOutput using hooks
-	const toolInput = useWidgetInput<{ gameId?: string; adventureType?: string; level?: number; gold?: number; badge?: string }>();
+	const toolInput = useWidgetInput<{ gameId?: string; adventureType?: string; level?: number; gold?: number; badge?: string; mode?: 'default' | 'kitze' }>();
 	const toolOutput = useWidgetProps<ScoreBoardData>(fallbackData);
 	
 	const [data, setData] = useState<ScoreBoardData>(toolOutput);
@@ -65,6 +100,7 @@ export function ScoreBoardWidget() {
 			level: toolInput.level,
 			gold: toolInput.gold,
 			badge: toolInput.badge,
+			mode: toolInput.mode,
 		});
 
 		console.log('[ScoreBoardWidget] Input signature:', inputSignature);
@@ -83,6 +119,7 @@ export function ScoreBoardWidget() {
 			level: toolInput.level,
 			gold: toolInput.gold,
 			badge: toolInput.badge,
+			mode: toolInput.mode,
 		});
 		
 		if (hasUpdates) {
@@ -182,6 +219,82 @@ export function ScoreBoardWidget() {
 		: "--:--";
 
 	console.log('[ScoreBoardWidget] Current displayed data:', { level, gold, badges, playerName: data.playerName });
+
+	const mode = toolInput?.mode || 'kitze';
+
+	if (mode === 'kitze') {
+		const collectedCount = KITZE_ITEMS.filter(item => badges.includes(item.name)).length;
+		
+		return (
+			<div className="min-h-[calc(100vh-5rem)] bg-[#f0f0f0] py-8 text-slate-900 font-sans">
+				<div className="mx-auto w-full max-w-5xl px-4">
+					<div className="bg-white rounded-3xl shadow-xl p-6 border border-slate-200">
+						<header className="mb-8 text-center">
+							<h1 className="text-4xl md:text-5xl font-black tracking-tighter uppercase flex items-center justify-center gap-3 relative z-10">
+								<span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-800 drop-shadow-sm">USA</span>
+								<span className="bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-red-700 drop-shadow-sm">Junk Food</span>
+								<span className="text-slate-900">Bingo</span>
+							</h1>
+							<div className="h-2 w-full max-w-md mx-auto bg-slate-900 mt-2 -skew-x-12 relative -top-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"></div>
+						</header>
+
+						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-8">
+							{KITZE_ITEMS.map((item) => {
+								const isCollected = badges.includes(item.name);
+								return (
+									<div 
+										key={item.name}
+										className={cn(
+											"aspect-[4/3] rounded-xl p-3 flex flex-col items-center justify-center gap-2 border transition-all duration-300 relative overflow-hidden group",
+											isCollected 
+												? "bg-blue-600 border-blue-700 shadow-lg scale-[1.02]" 
+												: "bg-yellow-50 border-yellow-200 hover:border-yellow-300"
+										)}
+									>
+										{isCollected && (
+											<div className="absolute top-2 right-2">
+												<div className="h-2 w-2 rounded-full bg-white animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+											</div>
+										)}
+										<span className={cn(
+											"text-3xl drop-shadow-sm transition-transform duration-300",
+											isCollected ? "group-hover:scale-110" : "opacity-80 grayscale-[0.3]"
+										)}>
+											{item.icon}
+										</span>
+										<span className={cn(
+											"text-xs font-bold text-center uppercase tracking-wide leading-tight",
+											isCollected ? "text-white" : "text-slate-400"
+										)}>
+											{item.name}
+										</span>
+									</div>
+								);
+							})}
+						</div>
+
+						<div className="flex items-center justify-between border-t-2 border-slate-100 pt-6">
+							<div className="font-bold text-slate-500 uppercase tracking-wider text-sm">
+								{collectedCount} / {KITZE_ITEMS.length} Collected
+							</div>
+							<button
+								type="button"
+								onClick={() => {
+									void sendMcpMessage('prompt', {
+										prompt: "the user is ready for a challenge or a question about the place they are currently. also offer to go to the next location or ask if they want to hear interesting facts and trivia about the place"
+									});
+								}}
+								className="flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-3 text-sm font-bold text-white shadow-lg hover:bg-slate-800 transition-colors"
+							>
+								<Sparkles className="h-4 w-4" />
+								<span>Continue Adventure</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="min-h-[calc(100vh-5rem)] bg-gradient-to-b from-purple-950 via-amber-950 to-stone-950 py-12 text-white">
@@ -295,4 +408,3 @@ export function ScoreBoardWidget() {
 		</div>
 	);
 }
-
